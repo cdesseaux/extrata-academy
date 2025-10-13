@@ -1,0 +1,660 @@
+# 🗺️ EXTRATA ACADEMY - Roadmap de Implementação
+
+## 📅 Timeline Geral (12 Semanas)
+
+```
+Fase 0: Setup & Planning        │████│ Semana 1
+Fase 1: Backend Core           │████████│ Semanas 2-3
+Fase 2: Frontend Core          │████████│ Semanas 4-5
+Fase 3: Features Avançadas     │████████████│ Semanas 6-8
+Fase 4: Integration & Polish   │████████│ Semanas 9-10
+Fase 5: Beta & Launch          │████████│ Semanas 11-12
+```
+
+---
+
+## 🚀 FASE 0: Setup & Planning (Semana 1)
+
+### Objetivos
+- Preparar ambiente de desenvolvimento
+- Criar estrutura de repositório
+- Configurar ferramentas e CI/CD
+- Finalizar documentação técnica
+
+### Tasks
+
+#### Dia 1-2: Setup Inicial
+- [ ] **Criar repositório GitHub**
+  - Configurar .gitignore
+  - Adicionar README
+  - Configurar branch protection (main)
+  - Adicionar LICENSE
+
+- [ ] **Estrutura de pastas**
+  ```bash
+  mkdir -p extrata-academy/{backend,frontend,shared,docs,infrastructure,scripts}
+  cd extrata-academy
+  git init
+  ```
+
+- [ ] **Setup Docker local**
+  ```yaml
+  # docker-compose.yml
+  version: '3.8'
+  services:
+    postgres:
+      image: postgres:17
+      environment:
+        POSTGRES_DB: academy
+        POSTGRES_USER: academy
+        POSTGRES_PASSWORD: academy123
+      ports:
+        - "5432:5432"
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+    
+    redis:
+      image: redis:7-alpine
+      ports:
+        - "6379:6379"
+    
+    keycloak:
+      image: quay.io/keycloak/keycloak:23.0
+      environment:
+        KEYCLOAK_ADMIN: admin
+        KEYCLOAK_ADMIN_PASSWORD: admin
+      ports:
+        - "8080:8080"
+      command: start-dev
+
+  volumes:
+    postgres_data:
+  ```
+
+#### Dia 3: Backend Setup
+- [ ] **Inicializar NestJS**
+  ```bash
+  cd backend
+  npm i -g @nestjs/cli
+  nest new . --strict --package-manager npm
+  ```
+
+- [ ] **Instalar dependências principais**
+  ```bash
+  npm install @nestjs/config @nestjs/typeorm typeorm pg
+  npm install @nestjs/passport passport passport-jwt
+  npm install class-validator class-transformer
+  npm install @nestjs/swagger swagger-ui-express
+  npm install --save-dev @types/passport-jwt
+  ```
+
+- [ ] **Configurar TypeORM**
+  ```typescript
+  // src/config/database.config.ts
+  export default registerAs('database', () => ({
+    type: 'postgres',
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT, 10) || 5432,
+    username: process.env.DB_USER || 'academy',
+    password: process.env.DB_PASSWORD || 'academy123',
+    database: process.env.DB_NAME || 'academy',
+    entities: [__dirname + '/../**/*.entity{.ts,.js}'],
+    synchronize: process.env.NODE_ENV === 'development',
+    logging: process.env.NODE_ENV === 'development',
+  }));
+  ```
+
+#### Dia 4: Frontend Setup
+- [ ] **Inicializar Next.js**
+  ```bash
+  cd frontend
+  npx create-next-app@latest . --typescript --tailwind --app --src-dir
+  ```
+
+- [ ] **Instalar dependências**
+  ```bash
+  npm install @tanstack/react-query zustand
+  npm install axios zod react-hook-form @hookform/resolvers
+  npm install lucide-react clsx tailwind-merge
+  npm install --save-dev @types/node
+  ```
+
+- [ ] **Configurar shadcn/ui**
+  ```bash
+  npx shadcn-ui@latest init
+  npx shadcn-ui@latest add button card input label
+  ```
+
+#### Dia 5: CI/CD & Tooling
+- [ ] **GitHub Actions**
+  ```yaml
+  # .github/workflows/backend-ci.yml
+  name: Backend CI
+  on: [push, pull_request]
+  jobs:
+    test:
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v3
+        - uses: actions/setup-node@v3
+          with:
+            node-version: '20'
+        - run: cd backend && npm ci
+        - run: cd backend && npm run test
+        - run: cd backend && npm run lint
+  ```
+
+- [ ] **Configurar linting**
+  ```bash
+  # Backend
+  npm install --save-dev @typescript-eslint/eslint-plugin @typescript-eslint/parser
+  
+  # Frontend
+  npm install --save-dev eslint-config-next
+  ```
+
+- [ ] **Configurar Prettier**
+  ```json
+  {
+    "semi": true,
+    "trailingComma": "all",
+    "singleQuote": true,
+    "printWidth": 100,
+    "tabWidth": 2
+  }
+  ```
+
+### Entregável Fase 0
+- ✅ Repositório configurado e versionado
+- ✅ Docker Compose rodando local
+- ✅ Backend iniciado (Hello World)
+- ✅ Frontend iniciado (Home page)
+- ✅ CI/CD pipeline funcionando
+
+---
+
+## 🔧 FASE 1: Backend Core (Semanas 2-3)
+
+### Objetivos
+- Implementar autenticação
+- Criar entidades principais
+- CRUD de cursos básico
+- API REST funcional
+
+### Semana 2
+
+#### Sprint 2.1: Database & Auth (Dias 6-8)
+- [ ] **Criar schema de banco**
+  - Tabelas: users, courses, modules, lessons
+  - Migrations iniciais
+  - Seed data de teste
+
+- [ ] **Implementar autenticação Keycloak**
+  ```typescript
+  // auth/strategies/jwt.strategy.ts
+  @Injectable()
+  export class JwtStrategy extends PassportStrategy(Strategy) {
+    constructor(private configService: ConfigService) {
+      super({
+        jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+        ignoreExpiration: false,
+        secretOrKey: configService.get('JWT_SECRET'),
+      });
+    }
+
+    async validate(payload: any) {
+      return {
+        id: payload.sub,
+        email: payload.email,
+        roles: payload.roles,
+      };
+    }
+  }
+  ```
+
+- [ ] **Criar módulo Users**
+  - UserEntity
+  - UsersService
+  - UsersController (CRUD básico)
+  - Testes unitários
+
+#### Sprint 2.2: Courses Module (Dias 9-12)
+- [ ] **Implementar módulo Courses**
+  - Entities: Course, Module, Lesson
+  - Services com business logic
+  - Controllers com Swagger docs
+  - DTOs e validação
+
+- [ ] **Endpoints principais**
+  ```typescript
+  GET    /courses              // List all
+  POST   /courses              // Create
+  GET    /courses/:id          // Get one
+  PATCH  /courses/:id          // Update
+  DELETE /courses/:id          // Delete
+  POST   /courses/:id/publish  // Publish
+  ```
+
+- [ ] **Testes**
+  - Unit tests para services
+  - Integration tests para controllers
+  - Coverage > 80%
+
+### Semana 3
+
+#### Sprint 3.1: Content Types (Dias 13-15)
+- [ ] **Implementar tipos de lição**
+  - Video lesson (metadados)
+  - Text lesson (rich content)
+  - Quiz lesson (estrutura)
+
+- [ ] **Storage integration**
+  - Upload de thumbnails para S3
+  - Signed URLs para downloads
+  - CDN integration
+
+#### Sprint 3.2: Enrollments & Progress (Dias 16-18)
+- [ ] **Módulo Enrollments**
+  - EnrollmentEntity
+  - Matrícula automática
+  - Status tracking
+
+- [ ] **Módulo Progress**
+  - LessonProgressEntity
+  - Cálculo de % de conclusão
+  - Update em tempo real
+
+- [ ] **API de progresso**
+  ```typescript
+  POST   /enrollments                    // Enroll
+  GET    /enrollments/my-courses         // My courses
+  GET    /courses/:id/with-progress      // Course + progress
+  POST   /progress/lessons/:id/complete  // Mark complete
+  PATCH  /progress/lessons/:id           // Update progress
+  ```
+
+### Entregável Fase 1
+- ✅ API REST funcional com Swagger
+- ✅ Autenticação JWT working
+- ✅ CRUD completo de cursos
+- ✅ Sistema de progresso básico
+- ✅ Testes com >80% coverage
+- ✅ Database com seed data
+
+---
+
+## 🎨 FASE 2: Frontend Core (Semanas 4-5)
+
+### Objetivos
+- Design system implementado
+- Páginas principais funcionais
+- Integração completa com API
+- UX polida e responsiva
+
+### Semana 4
+
+#### Sprint 4.1: Auth & Layout (Dias 19-21)
+- [ ] **Implementar autenticação**
+  - Login page
+  - Keycloak redirect flow
+  - Token management (Zustand)
+  - Protected routes
+
+- [ ] **Layout principal**
+  - Navbar com logo e user menu
+  - Sidebar com navegação
+  - Breadcrumbs
+  - Footer
+
+- [ ] **Design system**
+  - Cores e tipografia definidas
+  - Componentes base (shadcn/ui)
+  - Tokens de spacing
+  - Responsividade
+
+#### Sprint 4.2: Courses Pages (Dias 22-25)
+- [ ] **Dashboard**
+  - Cards de cursos em progresso
+  - Métricas (XP, nível, certificados)
+  - Recomendações
+
+- [ ] **Lista de cursos**
+  - Grid de cards com thumbnails
+  - Filtros (categoria, nível)
+  - Busca
+  - Paginação
+
+- [ ] **Detalhes do curso**
+  - Hero com thumbnail e info
+  - Lista de módulos e lições
+  - Botão "Iniciar" / "Continuar"
+  - Progress bar
+
+### Semana 5
+
+#### Sprint 5.1: Course Player (Dias 26-28)
+- [ ] **Player layout**
+  - Sidebar com navegação de lições
+  - Área principal de conteúdo
+  - Progress bar no topo
+  - Navegação prev/next
+
+- [ ] **Video player**
+  - Integração Plyr.io ou Video.js
+  - Tracking de progresso (10s)
+  - Auto-save de posição
+  - Controles completos
+
+- [ ] **Text lesson renderer**
+  - Markdown to HTML
+  - Syntax highlighting para code
+  - Responsivo
+  - Botão "Concluir"
+
+#### Sprint 5.2: Quiz & Profile (Dias 29-32)
+- [ ] **Quiz component**
+  - Renderização de questões
+  - Timer (se configurado)
+  - Submit e feedback
+  - Score display
+  - Retry logic
+
+- [ ] **Perfil do usuário**
+  - Avatar e info básica
+  - XP e nível
+  - Badges conquistados
+  - Histórico de cursos
+  - Certificados
+
+### Entregável Fase 2
+- ✅ Frontend completo e responsivo
+- ✅ Todas as páginas principais implementadas
+- ✅ Integração total com backend
+- ✅ UX polida e intuitiva
+- ✅ Auth flow funcionando perfeitamente
+
+---
+
+## ⭐ FASE 3: Features Avançadas (Semanas 6-8)
+
+### Objetivos
+- Gamificação completa
+- Certificados automáticos
+- Analytics e relatórios
+- Performance otimizada
+
+### Semana 6: Gamificação
+
+#### Sprint 6.1: XP & Levels (Dias 33-35)
+- [ ] **Backend: XP Service**
+  - Tabela user_xp
+  - Award XP por ações
+  - Cálculo de níveis
+  - Leaderboard queries
+
+- [ ] **Frontend: Gamification UI**
+  - XP notifications (toast)
+  - Level up modal
+  - Progress para próximo nível
+  - Leaderboard page
+
+#### Sprint 6.2: Badges & Achievements (Dias 36-39)
+- [ ] **Backend: Achievements**
+  - Tabela user_achievements
+  - Badge definitions
+  - Auto-unlock logic
+  - Achievement triggers
+
+- [ ] **Frontend: Badges**
+  - Badge showcase
+  - Unlock animations
+  - Progress tracking
+  - Share badges
+
+### Semana 7: Certificados & Quizzes
+
+#### Sprint 7.1: Certificates (Dias 40-42)
+- [ ] **Backend: Certificate generation**
+  - PDFKit integration
+  - Template design
+  - QR code generation
+  - Validation endpoint
+
+- [ ] **Frontend: Certificates**
+  - Certificate gallery
+  - Download button
+  - Share to LinkedIn
+  - Validation page
+
+#### Sprint 7.2: Quizzes Complete (Dias 43-46)
+- [ ] **Backend: Quiz logic**
+  - Questions CRUD
+  - Grading system
+  - Attempts tracking
+  - Analytics
+
+- [ ] **Frontend: Quiz experience**
+  - Question types UI
+  - Progress saving
+  - Review answers
+  - Results page
+
+### Semana 8: Analytics & Admin
+
+#### Sprint 8.1: Analytics (Dias 47-49)
+- [ ] **Backend: Analytics service**
+  - Event tracking
+  - Aggregation queries
+  - Reports generation
+  - Export to CSV
+
+- [ ] **Frontend: Dashboard Admin**
+  - Métricas overview
+  - Gráficos (Chart.js)
+  - Filtros de período
+  - Export
+
+#### Sprint 8.2: Admin CMS (Dias 50-53)
+- [ ] **Course editor**
+  - Rich text editor
+  - Media upload
+  - Drag & drop reordering
+  - Preview mode
+
+- [ ] **User management**
+  - Lista de usuários
+  - Editar roles
+  - View progress
+  - Reset progress
+
+### Entregável Fase 3
+- ✅ Gamificação completa e engajante
+- ✅ Certificados gerados automaticamente
+- ✅ Analytics dashboard funcional
+- ✅ Admin CMS para gestão de conteúdo
+
+---
+
+## 🔗 FASE 4: Integration & Polish (Semanas 9-10)
+
+### Objetivos
+- Integração com Extrata
+- Performance otimizada
+- Testes E2E
+- Bug fixes
+
+### Semana 9
+
+#### Sprint 9.1: Extrata Integration (Dias 54-56)
+- [ ] **SSO completo**
+  - Sincronização de usuários
+  - Roles mapping
+  - Session sharing
+
+- [ ] **Data sync**
+  - Municípios
+  - User metadata
+  - Webhooks
+
+- [ ] **Help widget in-app**
+  - Context-aware help
+  - Search docs
+  - Link to courses
+
+#### Sprint 9.2: Performance (Dias 57-60)
+- [ ] **Backend optimization**
+  - Query optimization
+  - Caching (Redis)
+  - Connection pooling
+  - Async processing
+
+- [ ] **Frontend optimization**
+  - Code splitting
+  - Image optimization
+  - Lazy loading
+  - Service Worker (PWA)
+
+### Semana 10
+
+#### Sprint 10.1: Testing (Dias 61-63)
+- [ ] **E2E tests (Playwright)**
+  - Critical user flows
+  - Cross-browser testing
+  - Visual regression
+
+- [ ] **Load testing**
+  - K6 ou Artillery
+  - 500 concurrent users
+  - Performance benchmarks
+
+#### Sprint 10.2: Polish & Docs (Dias 64-67)
+- [ ] **UI polish**
+  - Loading states
+  - Error handling
+  - Empty states
+  - Animations
+
+- [ ] **Documentation**
+  - API docs complete
+  - User guide
+  - Admin guide
+  - Deploy guide
+
+### Entregável Fase 4
+- ✅ Integração com Extrata funcionando
+- ✅ Performance targets atingidos
+- ✅ Testes E2E passando
+- ✅ Zero bugs críticos
+
+---
+
+## 🚀 FASE 5: Beta & Launch (Semanas 11-12)
+
+### Objetivos
+- Beta test com usuários reais
+- Deploy em staging e produção
+- Treinamento de usuários
+- Go live!
+
+### Semana 11: Beta
+
+#### Sprint 11.1: Beta Deploy (Dias 68-70)
+- [ ] **Deploy staging**
+  - Configurar ambiente
+  - CI/CD to staging
+  - Monitoring setup
+  - Backup automático
+
+- [ ] **Beta users**
+  - Selecionar 50 usuários
+  - Onboarding email
+  - Suporte dedicado
+  - Feedback form
+
+#### Sprint 11.2: Feedback & Fixes (Dias 71-74)
+- [ ] **Coletar feedback**
+  - Sessões de teste
+  - Analytics review
+  - Bug reports
+  - Feature requests
+
+- [ ] **Implementar ajustes**
+  - Bug fixes críticos
+  - UX improvements
+  - Performance tuning
+
+### Semana 12: Launch
+
+#### Sprint 12.1: Production Deploy (Dias 75-77)
+- [ ] **Deploy produção**
+  - Configurar domínio
+  - SSL certificates
+  - CDN setup
+  - Final testing
+
+- [ ] **Data migration**
+  - Migrate beta data
+  - Validate integrity
+  - Backup completo
+
+#### Sprint 12.2: Launch! (Dias 78-80)
+- [ ] **Go Live**
+  - Announcement email
+  - Treinamento gravado
+  - Suporte preparado
+  - Monitoring ativo
+
+- [ ] **Post-launch**
+  - Monitorar métricas
+  - Fix hotfixes
+  - Coletar feedback
+  - Plan next iteration
+
+### Entregável Fase 5
+- ✅ Sistema em produção
+- ✅ Usuários ativos e engajados
+- ✅ SLA targets cumpridos
+- ✅ Roadmap para v2 definido
+
+---
+
+## 📊 Métricas de Progresso
+
+### Weekly Check-ins
+Toda segunda-feira:
+- Review do que foi feito
+- Demo de features novas
+- Bloqueios e impedimentos
+- Plan para a semana
+
+### KPIs por Fase
+| Fase | KPI Principal | Target |
+|------|---------------|--------|
+| 0 | Setup completo | 100% |
+| 1 | API endpoints | 15+ |
+| 2 | Pages implemented | 8+ |
+| 3 | Features released | 10+ |
+| 4 | Tests passing | >95% |
+| 5 | Users onboarded | 50+ |
+
+---
+
+## 🎯 Próximos Passos Imediatos
+
+### Esta Semana
+1. [ ] Aprovar roadmap com stakeholders
+2. [ ] Alocar time e recursos
+3. [ ] Criar repositório GitHub
+4. [ ] Kickoff meeting
+
+### Semana que Vem
+1. [ ] Setup ambiente dev local
+2. [ ] Primeira linha de código
+3. [ ] Daily standups começam
+4. [ ] Sprint 1 em andamento
+
+---
+
+**Responsável pelo Roadmap**: [Tech Lead]  
+**Última atualização**: 2025-10-06  
+**Status**: 📝 Aguardando Aprovação

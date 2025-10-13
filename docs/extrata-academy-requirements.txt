@@ -1,0 +1,492 @@
+# 📋 EXTRATA ACADEMY - Requisitos Funcionais e Não-Funcionais
+
+## 🎯 Requisitos Funcionais
+
+### RF-001: Autenticação e Autorização
+
+#### RF-001.1: Login via SSO (Keycloak)
+**Prioridade**: 🔴 Crítica  
+**Descrição**: Usuário deve fazer login usando credenciais do Extrata via Keycloak  
+**Critérios de Aceitação**:
+- [ ] Usuário clica em "Entrar" e é redirecionado para Keycloak
+- [ ] Após autenticação, retorna para Academy com sessão ativa
+- [ ] Token JWT é armazenado e usado em todas as requisições
+- [ ] Logout invalida token e limpa sessão
+
+#### RF-001.2: Controle de Acesso Baseado em Roles
+**Prioridade**: 🔴 Crítica  
+**Roles**:
+- `ADMIN`: Acesso total, gerencia cursos e usuários
+- `INSTRUCTOR`: Cria e edita cursos
+- `STUDENT`: Acessa e completa cursos
+- `AUDITOR`: Visualiza relatórios e analytics
+
+**Critérios de Aceitação**:
+- [ ] Roles são sincronizadas do Keycloak
+- [ ] Permissões são verificadas no backend
+- [ ] UI mostra/esconde features baseado em role
+
+---
+
+### RF-002: Gestão de Cursos
+
+#### RF-002.1: Criar Curso
+**Prioridade**: 🔴 Crítica  
+**Ator**: ADMIN, INSTRUCTOR  
+**Descrição**: Criar novo curso com metadados básicos
+
+**Campos**:
+- Título (obrigatório, max 255 chars)
+- Descrição (obrigatório, rich text)
+- Categoria (select: Iniciante/Intermediário/Avançado)
+- Duração estimada (horas)
+- Thumbnail (upload de imagem)
+- Status (draft/published/archived)
+
+**Critérios de Aceitação**:
+- [ ] Form de criação com validação
+- [ ] Curso criado como draft por padrão
+- [ ] Slug gerado automaticamente a partir do título
+- [ ] Thumbnail é redimensionado e armazenado
+
+#### RF-002.2: Estruturar Curso (Módulos e Lições)
+**Prioridade**: 🔴 Crítica  
+**Descrição**: Organizar curso em módulos e lições
+
+**Estrutura**:
+```
+Curso
+├── Módulo 1
+│   ├── Lição 1.1 (vídeo)
+│   ├── Lição 1.2 (texto)
+│   └── Lição 1.3 (quiz)
+└── Módulo 2
+    ├── Lição 2.1
+    └── Lição 2.2
+```
+
+**Critérios de Aceitação**:
+- [ ] Criar/editar/deletar módulos
+- [ ] Criar/editar/deletar lições
+- [ ] Reordenar módulos e lições (drag & drop)
+- [ ] Marcar lições como obrigatórias
+- [ ] Preview antes de publicar
+
+#### RF-002.3: Publicar Curso
+**Prioridade**: 🟡 Alta  
+**Descrição**: Tornar curso disponível para alunos
+
+**Validações**:
+- Curso deve ter pelo menos 1 módulo
+- Módulo deve ter pelo menos 1 lição
+- Todas as lições devem ter conteúdo
+
+**Critérios de Aceitação**:
+- [ ] Validações impedem publicação incompleta
+- [ ] Notificação para alunos inscritos
+- [ ] Aparece na lista de cursos disponíveis
+
+#### RF-002.4: Versionamento de Curso
+**Prioridade**: 🟢 Média  
+**Descrição**: Manter histórico de versões do curso
+
+**Critérios de Aceitação**:
+- [ ] Cada mudança cria nova versão
+- [ ] Alunos continuam na versão matriculada
+- [ ] Admin pode ver histórico de versões
+- [ ] Pode reverter para versão anterior
+
+---
+
+### RF-003: Tipos de Conteúdo
+
+#### RF-003.1: Lição de Vídeo
+**Prioridade**: 🔴 Crítica  
+**Descrição**: Reproduzir vídeo com tracking de progresso
+
+**Features**:
+- Player HTML5 com controles
+- Adaptive streaming (múltiplas qualidades)
+- Legendas/transcrições
+- Speed control (0.5x - 2x)
+- Fullscreen
+- Picture-in-picture
+
+**Tracking**:
+- Tempo assistido
+- % de conclusão (considera 90% como completo)
+- Tentativas de pular (prevenção opcional)
+
+**Critérios de Aceitação**:
+- [ ] Vídeo é reproduzido sem buffering excessivo
+- [ ] Progress é salvo a cada 10 segundos
+- [ ] Usuário pode retomar de onde parou
+- [ ] Marca como completa após 90% assistido
+
+#### RF-003.2: Lição de Texto
+**Prioridade**: 🔴 Crítica  
+**Descrição**: Exibir conteúdo textual formatado
+
+**Editor**: Rich text (Markdown ou WYSIWYG)  
+**Suporte**:
+- Headings, bold, italic, lists
+- Links, imagens
+- Code blocks
+- Embeds (YouTube, etc)
+
+**Critérios de Aceitação**:
+- [ ] Conteúdo é renderizado corretamente
+- [ ] Responsivo (mobile-friendly)
+- [ ] Botão "Marcar como concluída"
+- [ ] Tempo de leitura estimado
+
+#### RF-003.3: Lição de Quiz
+**Prioridade**: 🔴 Crítica  
+**Descrição**: Avaliação do aprendizado
+
+**Tipos de Questão**:
+- Múltipla escolha (single/multiple answers)
+- Verdadeiro/Falso
+- Dissertativa (futuro)
+
+**Configurações**:
+- Nota mínima para aprovação (padrão: 70%)
+- Máximo de tentativas (padrão: 3)
+- Tempo limite (opcional)
+- Embaralhar questões
+- Mostrar resposta correta após submissão
+
+**Critérios de Aceitação**:
+- [ ] Questões são apresentadas uma por vez ou todas juntas (config)
+- [ ] Timer é exibido se houver limite de tempo
+- [ ] Feedback imediato após submissão
+- [ ] Score é calculado automaticamente
+- [ ] Permite tentar novamente se reprovado
+
+---
+
+### RF-004: Experiência do Aluno
+
+#### RF-004.1: Navegar Cursos
+**Prioridade**: 🔴 Crítica  
+**Descrição**: Descobrir e filtrar cursos disponíveis
+
+**Filtros**:
+- Categoria
+- Nível (iniciante/intermediário/avançado)
+- Duração
+- Status (não iniciado/em progresso/concluído)
+
+**Ordenação**:
+- Popularidade
+- Mais recentes
+- A-Z
+
+**Critérios de Aceitação**:
+- [ ] Grid de cards com thumbnail e info básica
+- [ ] Busca por texto (título/descrição)
+- [ ] Filtros funcionam em tempo real
+- [ ] Paginação ou infinite scroll
+
+#### RF-004.2: Matricular em Curso
+**Prioridade**: 🔴 Crítica  
+**Descrição**: Iniciar um curso
+
+**Critérios de Aceitação**:
+- [ ] Botão "Iniciar Curso" / "Continuar"
+- [ ] Matrícula é registrada com timestamp
+- [ ] Redireciona para primeira lição não completa
+- [ ] Curso aparece em "Meus Cursos"
+
+#### RF-004.3: Progresso do Curso
+**Prioridade**: 🔴 Crítica  
+**Descrição**: Visualizar e rastrear progresso
+
+**Indicadores**:
+- % de conclusão geral
+- Lições completas / total
+- Tempo gasto
+- Última atividade
+
+**Critérios de Aceitação**:
+- [ ] Barra de progresso visível
+- [ ] Checkmarks em lições completadas
+- [ ] Progresso salvo automaticamente
+- [ ] Sincroniza entre dispositivos
+
+#### RF-004.4: Certificado de Conclusão
+**Prioridade**: 🟡 Alta  
+**Descrição**: Receber certificado ao completar curso
+
+**Trigger**: 100% das lições obrigatórias completas + quizzes aprovados
+
+**Certificado**:
+- PDF profissional
+- Nome do aluno
+- Nome do curso
+- Data de conclusão
+- Carga horária
+- Código único de verificação
+- QR Code para validação
+
+**Critérios de Aceitação**:
+- [ ] Certificado gerado automaticamente
+- [ ] Notificação push/email
+- [ ] Download em PDF
+- [ ] Link de compartilhamento (LinkedIn)
+- [ ] Página de validação pública
+
+---
+
+### RF-005: Gamificação
+
+#### RF-005.1: Sistema de XP
+**Prioridade**: 🟡 Alta  
+**Descrição**: Ganhar pontos de experiência por ações
+
+**Recompensas**:
+| Ação | XP |
+|------|-----|
+| Lição completa | 50 |
+| Quiz aprovado | 100 |
+| Quiz com nota perfeita | 200 |
+| Curso completo | 500 |
+| Primeiro curso | 1000 (bônus) |
+| Streak 7 dias | 300 |
+
+**Critérios de Aceitação**:
+- [ ] XP é creditado imediatamente
+- [ ] Notificação visual de ganho de XP
+- [ ] Total de XP visível no perfil
+
+#### RF-005.2: Níveis
+**Prioridade**: 🟡 Alta  
+**Descrição**: Progredir através de níveis
+
+**Curva**:
+- Nível 1: 0 XP
+- Nível 2: 1.000 XP
+- Nível 3: 2.500 XP
+- Nível 4: 5.000 XP
+- Nível 5: 10.000 XP
+- Nível 10: 100.000 XP
+
+**Critérios de Aceitação**:
+- [ ] Level up é comemorado (animação)
+- [ ] Badge de nível visível
+- [ ] Progresso para próximo nível mostrado
+
+#### RF-005.3: Badges/Conquistas
+**Prioridade**: 🟢 Média  
+**Descrição**: Desbloquear badges por milestones
+
+**Exemplos**:
+- 🎯 Primeira Proposta: Complete primeiro curso
+- 🤖 Mestre da IA: Complete todos os cursos de IA
+- ⚡ Veloz: Complete curso em <24h
+- 🏆 Top 10: Fique no top 10 do leaderboard
+- 🎓 Mentor: Ajude 10 colegas (community)
+
+**Critérios de Aceitação**:
+- [ ] Badges são desbloqueados automaticamente
+- [ ] Notificação de novo badge
+- [ ] Vitrine de badges no perfil
+- [ ] Progresso para badges próximos
+
+#### RF-005.4: Leaderboard
+**Prioridade**: 🟢 Média  
+**Descrição**: Ranking de usuários por XP
+
+**Filtros**:
+- Global (todos)
+- Por município
+- Por role
+
+**Critérios de Aceitação**:
+- [ ] Top 100 exibidos
+- [ ] Posição do usuário destacada
+- [ ] Atualiza em tempo real (ou cache de 5min)
+- [ ] Filtros funcionam
+
+---
+
+### RF-006: Analytics e Relatórios
+
+#### RF-006.1: Dashboard Administrativo
+**Prioridade**: 🟡 Alta  
+**Ator**: ADMIN, AUDITOR  
+**Descrição**: Visão geral de métricas
+
+**Métricas**:
+- Total de usuários ativos
+- Total de matrículas
+- Taxa de conclusão média
+- Cursos mais populares
+- Tempo médio de conclusão
+- Usuários mais engajados
+
+**Critérios de Aceitação**:
+- [ ] Gráficos interativos
+- [ ] Filtros por período
+- [ ] Export para CSV/PDF
+- [ ] Atualiza em tempo real
+
+#### RF-006.2: Relatório de Progresso Individual
+**Prioridade**: 🟡 Alta  
+**Ator**: ADMIN, GESTOR  
+**Descrição**: Ver progresso detalhado de um usuário
+
+**Informações**:
+- Cursos em andamento
+- Cursos concluídos
+- Certificados obtidos
+- XP e nível
+- Tempo total gasto
+- Últimas atividades
+
+**Critérios de Aceitação**:
+- [ ] Busca por nome/email
+- [ ] Visualização detalhada
+- [ ] Timeline de atividades
+- [ ] Export de relatório
+
+#### RF-006.3: Relatório de Curso
+**Prioridade**: 🟢 Média  
+**Ator**: ADMIN, INSTRUCTOR  
+**Descrição**: Métricas de um curso específico
+
+**Métricas**:
+- Total de matrículas
+- Taxa de conclusão
+- Tempo médio de conclusão
+- Lições com maior abandono
+- Scores médios de quizzes
+- Feedback dos alunos
+
+**Critérios de Aceitação**:
+- [ ] Gráficos por lição
+- [ ] Identifica gargalos
+- [ ] Sugestões de melhoria
+
+---
+
+## 🔧 Requisitos Não-Funcionais
+
+### RNF-001: Performance
+**Prioridade**: 🔴 Crítica
+
+- **RNF-001.1**: API response time < 200ms (p95)
+- **RNF-001.2**: Page load time < 2s (p95)
+- **RNF-001.3**: Video start time < 3s
+- **RNF-001.4**: Suportar 500 usuários simultâneos sem degradação
+- **RNF-001.5**: Database queries < 50ms (p95)
+
+### RNF-002: Disponibilidade
+**Prioridade**: 🔴 Crítica
+
+- **RNF-002.1**: Uptime >= 99.5% (máximo 3.65h downtime/mês)
+- **RNF-002.2**: RPO (Recovery Point Objective) = 1h
+- **RNF-002.3**: RTO (Recovery Time Objective) = 2h
+- **RNF-002.4**: Backups diários automáticos
+- **RNF-002.5**: Disaster recovery plan documentado
+
+### RNF-003: Segurança
+**Prioridade**: 🔴 Crítica
+
+- **RNF-003.1**: Autenticação via OAuth2/OpenID Connect (Keycloak)
+- **RNF-003.2**: Comunicação via HTTPS (TLS 1.3)
+- **RNF-003.3**: Tokens JWT com expiração (15min access, 7d refresh)
+- **RNF-003.4**: Rate limiting (100 req/min por IP)
+- **RNF-003.5**: SQL injection prevention (prepared statements)
+- **RNF-003.6**: XSS prevention (sanitização de inputs)
+- **RNF-003.7**: CSRF protection
+- **RNF-003.8**: Compliance LGPD (dados de usuários)
+
+### RNF-004: Escalabilidade
+**Prioridade**: 🟡 Alta
+
+- **RNF-004.1**: Stateless backend (horizontal scaling)
+- **RNF-004.2**: Database connection pooling
+- **RNF-004.3**: Caching strategy (Redis)
+- **RNF-004.4**: CDN para assets estáticos
+- **RNF-004.5**: Async processing para tarefas pesadas
+
+### RNF-005: Usabilidade
+**Prioridade**: 🟡 Alta
+
+- **RNF-005.1**: Responsive design (mobile, tablet, desktop)
+- **RNF-005.2**: Acessibilidade WCAG 2.1 nível AA
+- **RNF-005.3**: Suporte a navegadores modernos (últimas 2 versões)
+- **RNF-005.4**: PWA (Progressive Web App)
+- **RNF-005.5**: Offline-first para conteúdo baixado
+
+### RNF-006: Manutenibilidade
+**Prioridade**: 🟡 Alta
+
+- **RNF-006.1**: Code coverage >= 80%
+- **RNF-006.2**: Documentação técnica completa
+- **RNF-006.3**: Código em TypeScript (type-safe)
+- **RNF-006.4**: Linting e formatting automáticos
+- **RNF-006.5**: Git workflow padronizado
+- **RNF-006.6**: CI/CD pipeline automatizado
+
+### RNF-007: Observabilidade
+**Prioridade**: 🟡 Alta
+
+- **RNF-007.1**: Logging estruturado (Winston/Pino)
+- **RNF-007.2**: Distributed tracing (Jaeger/Zipkin)
+- **RNF-007.3**: Métricas (Prometheus/Grafana)
+- **RNF-007.4**: Error tracking (Sentry)
+- **RNF-007.5**: Alertas automáticos (PagerDuty/Opsgenie)
+
+---
+
+## 🚫 Out of Scope (Não é MVP)
+
+- ❌ Mobile apps nativos (iOS/Android)
+- ❌ Live classes / webinars
+- ❌ Fórum / discussões (usar Discord)
+- ❌ Peer-to-peer review
+- ❌ Marketplace de cursos
+- ❌ AI tutor / chatbot
+- ❌ Social features (seguir usuários, etc)
+- ❌ Multi-idioma (apenas PT-BR)
+- ❌ White-label para outros clientes
+
+---
+
+## ✅ Checklist de Aceitação do MVP
+
+### Features Core
+- [ ] Login via SSO funciona
+- [ ] CRUD de cursos completo
+- [ ] Player de vídeo com tracking
+- [ ] Quizzes com correção automática
+- [ ] Progresso salva e sincroniza
+- [ ] Certificados são gerados
+- [ ] Gamificação básica (XP + níveis)
+- [ ] Dashboard admin com métricas
+
+### Qualidade
+- [ ] Testes automatizados com >80% coverage
+- [ ] Load testing com 500 usuários simultâneos
+- [ ] Security audit aprovado
+- [ ] Acessibilidade WCAG 2.1 AA
+- [ ] Performance: <2s load, <200ms API
+
+### Operacional
+- [ ] CI/CD pipeline funcionando
+- [ ] Monitoring e alertas configurados
+- [ ] Backups automáticos
+- [ ] Documentação completa
+
+---
+
+**Aprovadores**:  
+[ ] Product Owner  
+[ ] Tech Lead  
+[ ] QA Lead  
+
+**Data de Aprovação**: ___________
+
+**Próximo documento**: [03-ARCHITECTURE.md](./03-ARCHITECTURE.md)

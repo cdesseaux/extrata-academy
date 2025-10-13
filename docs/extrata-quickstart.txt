@@ -1,0 +1,419 @@
+# 🚀 EXTRATA ACADEMY - Quick Start Guide
+
+## 📦 O que você recebeu
+
+Uma documentação **completa e pronta para uso** para desenvolver o Extrata Academy LMS do zero:
+
+### 📚 Documentação (10 documentos)
+1. **00-PROJECT-STRUCTURE.md** - Estrutura completa do projeto
+2. **01-EXECUTIVE-SUMMARY.md** - Visão executiva e objetivos
+3. **02-REQUIREMENTS.md** - Requisitos funcionais e não-funcionais
+4. **03-ARCHITECTURE.md** - Arquitetura técnica detalhada
+5. **04-DATABASE-DESIGN.md** - Schema completo do PostgreSQL
+6. **05-API-SPECIFICATION.md** - Documentação completa da API REST
+7. **07-DEVELOPMENT-GUIDE.md** - Guia hands-on para desenvolvedores
+8. **08-TESTING-STRATEGY.md** - Estratégia de testes (unit, E2E, load)
+9. **09-DEPLOYMENT-GUIDE.md** - Deploy completo (Docker, AWS, CI/CD)
+10. **10-IMPLEMENTATION-ROADMAP.md** - Roadmap de 12 semanas
+
+### 🛠️ Arquivos Práticos (4 arquivos)
+1. **docker-compose.yml** - Infraestrutura completa (PostgreSQL, Redis, Keycloak)
+2. **.env.example** - Todas as variáveis de ambiente
+3. **setup-dev.sh** - Script automatizado de setup
+4. **README.md** - Documentação principal do projeto
+
+---
+
+## ⚡ Setup Rápido (5 minutos)
+
+### Pré-requisitos
+```bash
+# Verifique se tem instalado:
+node --version  # v20+
+npm --version   # v10+
+docker --version
+docker-compose --version
+git --version
+```
+
+### Instalação Automatizada
+
+```bash
+# 1. Criar pasta do projeto
+mkdir extrata-academy
+cd extrata-academy
+
+# 2. Criar estrutura de pastas
+mkdir -p docs backend frontend shared infrastructure scripts
+
+# 3. Copiar todos os arquivos .md para docs/
+
+# 4. Copiar arquivos de configuração para raiz:
+#    - docker-compose.yml
+#    - .env.example
+#    - README.md
+
+# 5. Copiar setup-dev.sh para scripts/
+mkdir -p scripts
+# (cole o conteúdo de setup-dev.sh em scripts/setup-dev.sh)
+
+# 6. Executar setup
+chmod +x scripts/setup-dev.sh
+./scripts/setup-dev.sh
+```
+
+O script vai:
+- ✅ Verificar pré-requisitos
+- ✅ Criar estrutura de pastas
+- ✅ Gerar .env com secrets aleatórios
+- ✅ Inicializar backend NestJS
+- ✅ Inicializar frontend Next.js
+- ✅ Instalar todas as dependências
+- ✅ Subir Docker (PostgreSQL, Redis, Keycloak)
+- ✅ Inicializar Git
+
+---
+
+## 🎯 Setup Manual (se preferir controle total)
+
+### 1. Estrutura de Pastas
+
+```bash
+mkdir -p extrata-academy/{backend,frontend,shared,docs,infrastructure,scripts}
+cd extrata-academy
+```
+
+### 2. Documentação
+
+```bash
+# Criar pasta docs
+mkdir -p docs/assets/{diagrams,wireframes,screenshots}
+
+# Copiar todos os arquivos .md para docs/
+# Copiar README.md para raiz
+```
+
+### 3. Configuração
+
+```bash
+# Copiar arquivos de configuração
+cp docker-compose.yml .
+cp .env.example .env
+
+# Editar .env com suas credenciais
+nano .env
+```
+
+### 4. Docker Infrastructure
+
+```bash
+# Subir PostgreSQL, Redis, Keycloak
+docker-compose up -d postgres redis keycloak
+
+# Verificar status
+docker-compose ps
+
+# Ver logs
+docker-compose logs -f
+```
+
+### 5. Backend (NestJS)
+
+```bash
+cd backend
+
+# Criar projeto NestJS
+npx @nestjs/cli new . --strict --package-manager npm
+
+# Instalar dependências
+npm install --save \
+  @nestjs/config \
+  @nestjs/typeorm typeorm pg \
+  @nestjs/passport passport passport-jwt @nestjs/jwt \
+  @nestjs/swagger \
+  class-validator class-transformer \
+  bcrypt redis ioredis
+
+npm install --save-dev \
+  @types/passport-jwt \
+  @types/bcrypt
+
+# Iniciar dev server
+npm run start:dev
+```
+
+### 6. Frontend (Next.js)
+
+```bash
+cd frontend
+
+# Criar projeto Next.js
+npx create-next-app@latest . \
+  --typescript \
+  --tailwind \
+  --app \
+  --src-dir
+
+# Instalar dependências
+npm install \
+  @tanstack/react-query \
+  zustand \
+  axios \
+  zod react-hook-form \
+  lucide-react
+
+# Setup shadcn/ui
+npx shadcn-ui@latest init
+npx shadcn-ui@latest add button card input
+
+# Iniciar dev server
+npm run dev
+```
+
+---
+
+## 🔍 Verificação
+
+### Checar se tudo está rodando:
+
+```bash
+# Backend
+curl http://localhost:4000/health
+# Expected: {"status":"ok"}
+
+# Frontend
+curl http://localhost:3000
+# Expected: HTML response
+
+# PostgreSQL
+docker exec -it extrata-academy-postgres psql -U academy -d academy -c "SELECT 1;"
+# Expected: 1 row returned
+
+# Redis
+docker exec -it extrata-academy-redis redis-cli ping
+# Expected: PONG
+
+# Keycloak
+curl http://localhost:8080
+# Expected: HTML response
+```
+
+---
+
+## 🌐 Acessos
+
+| Serviço | URL | Credenciais |
+|---------|-----|-------------|
+| **Frontend** | http://localhost:3000 | - |
+| **Backend API** | http://localhost:4000 | - |
+| **Swagger Docs** | http://localhost:4000/api/docs | - |
+| **Keycloak Admin** | http://localhost:8080 | admin / admin |
+| **Adminer (DB GUI)** | http://localhost:8081 | academy / academy123 |
+| **PostgreSQL** | localhost:5432 | academy / academy123 |
+| **Redis** | localhost:6379 | redis123 |
+
+---
+
+## 📖 Próximos Passos
+
+### 1. Configurar Keycloak
+
+```bash
+# Acesse: http://localhost:8080
+# Login: admin / admin
+
+# Criar Realm "extrata"
+# Criar Client "academy-backend"
+# Criar Client "academy-frontend"
+# Criar Users de teste
+```
+
+### 2. Implementar Backend
+
+Siga: **docs/07-DEVELOPMENT-GUIDE.md**
+
+```bash
+cd backend
+
+# Criar módulo Users
+nest g module users
+nest g controller users
+nest g service users
+
+# Criar entidades (seguir docs/04-DATABASE-DESIGN.md)
+
+# Criar migrations
+npm run typeorm migration:generate -- -n InitialSchema
+npm run typeorm migration:run
+
+# Seed database
+npm run seed
+```
+
+### 3. Implementar Frontend
+
+```bash
+cd frontend
+
+# Criar páginas (seguir docs/07-DEVELOPMENT-GUIDE.md)
+# src/app/(auth)/login/page.tsx
+# src/app/(platform)/dashboard/page.tsx
+# src/app/(platform)/courses/page.tsx
+
+# Criar componentes
+# src/components/academy/CourseCard.tsx
+# src/components/academy/VideoPlayer.tsx
+```
+
+### 4. Seguir Roadmap
+
+Consulte: **docs/10-IMPLEMENTATION-ROADMAP.md**
+
+- Semana 1: Setup (✅ Você está aqui!)
+- Semana 2-3: Backend Core
+- Semana 4-5: Frontend Core
+- Semana 6-8: Features Avançadas
+- Semana 9-10: Integration & Polish
+- Semana 11-12: Beta & Launch
+
+---
+
+## 🧪 Testando
+
+```bash
+# Backend
+cd backend
+npm run test              # Unit tests
+npm run test:watch        # Watch mode
+npm run test:cov          # Coverage
+npm run test:e2e          # E2E tests
+
+# Frontend
+cd frontend
+npm run test              # Unit tests
+npm run test:e2e          # Playwright E2E
+```
+
+---
+
+## 🐛 Troubleshooting
+
+### Porta já em uso
+
+```bash
+# Encontrar processo
+lsof -i :4000
+lsof -i :3000
+
+# Matar processo
+kill -9 <PID>
+```
+
+### Docker não conecta
+
+```bash
+# Restart containers
+docker-compose restart
+
+# Ver logs
+docker-compose logs -f postgres
+docker-compose logs -f redis
+docker-compose logs -f keycloak
+
+# Recrear containers
+docker-compose down -v
+docker-compose up -d
+```
+
+### Banco de dados não conecta
+
+```bash
+# Verificar se está rodando
+docker ps | grep postgres
+
+# Acessar diretamente
+docker exec -it extrata-academy-postgres psql -U academy -d academy
+
+# Verificar credenciais no .env
+cat .env | grep DB_
+```
+
+### Node modules corrompidos
+
+```bash
+# Limpar e reinstalar
+cd backend
+rm -rf node_modules package-lock.json
+npm install
+
+cd ../frontend
+rm -rf node_modules package-lock.json .next
+npm install
+```
+
+---
+
+## 📚 Documentação Completa
+
+Para informações detalhadas, consulte:
+
+- **Desenvolvimento**: docs/07-DEVELOPMENT-GUIDE.md
+- **Arquitetura**: docs/03-ARCHITECTURE.md
+- **API**: docs/05-API-SPECIFICATION.md
+- **Database**: docs/04-DATABASE-DESIGN.md
+- **Testes**: docs/08-TESTING-STRATEGY.md
+- **Deploy**: docs/09-DEPLOYMENT-GUIDE.md
+- **Roadmap**: docs/10-IMPLEMENTATION-ROADMAP.md
+
+---
+
+## 💡 Dicas
+
+1. **Use o script automatizado** `setup-dev.sh` - poupa 30 minutos
+2. **Leia os comentários** nos arquivos de exemplo
+3. **Siga o roadmap** semana a semana
+4. **Consulte os docs** quando tiver dúvidas
+5. **Commit frequentemente** para não perder trabalho
+
+---
+
+## 🆘 Precisa de Ajuda?
+
+Se algo não funcionar:
+
+1. Verifique os **pré-requisitos** (Node 20+, Docker)
+2. Consulte **docs/07-DEVELOPMENT-GUIDE.md**
+3. Veja a seção **Troubleshooting** acima
+4. Revise os **logs** do Docker
+5. Verifique o **.env** está correto
+
+---
+
+## ✅ Checklist de Setup
+
+- [ ] Pré-requisitos instalados (Node, Docker, Git)
+- [ ] Estrutura de pastas criada
+- [ ] Documentação copiada para `docs/`
+- [ ] `.env` configurado
+- [ ] Docker containers rodando (postgres, redis, keycloak)
+- [ ] Backend inicializado e rodando
+- [ ] Frontend inicializado e rodando
+- [ ] Keycloak configurado (realm, clients)
+- [ ] Database migrations executadas
+- [ ] Seed data carregado
+- [ ] Testes passando
+- [ ] Git inicializado
+
+---
+
+## 🎉 Parabéns!
+
+Você está pronto para começar o desenvolvimento do Extrata Academy!
+
+**Próximo passo**: Comece pela **Fase 1** do roadmap (Backend Core)
+
+Consulte: **docs/10-IMPLEMENTATION-ROADMAP.md** → Semanas 2-3
+
+---
+
+**Boa sorte! 🚀**

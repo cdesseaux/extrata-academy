@@ -1,0 +1,1050 @@
+# 📊 EXTRATA ACADEMY - Observability & Monitoring
+
+## 📋 Overview
+
+Este documento define a estratégia completa de **observabilidade** para o Extrata Academy, cobrindo:
+
+- 📈 **Métricas** - O que está acontecendo (Prometheus/Grafana)
+- 📝 **Logs** - Por que está acontecendo (Winston/Loki)
+- 🔍 **Tracing** - Como está acontecendo (Jaeger/Zipkin)
+- 🚨 **Alertas** - Quando algo está errado (Alertmanager)
+
+**Objetivo**: Detectar, diagnosticar e resolver problemas proativamente.
+
+---
+
+## 🎯 Os Três Pilares da Observabilidade
+
+```
+┌─────────────────────────────────────────────────────┐
+│                  OBSERVABILITY                      │
+│                                                     │
+│  ┌───────────┐  ┌───────────┐  ┌───────────┐     │
+│  │  METRICS  │  │   LOGS    │  │  TRACES   │     │
+│  │           │  │           │  │           │     │
+│  │ What is   │  │ Why did   │  │ How did   │     │
+│  │ happening?│  │ it happen?│  │ it happen?│     │
+│  │           │  │           │  │           │     │
+│  │ Numbers   │  │ Events    │  │ Flows     │     │
+│  │ Trends    │  │ Context   │  │ Paths     │     │
+│  └─────┬─────┘  └─────┬─────┘  └─────┬─────┘     │
+│        │              │              │           │
+│        └──────────────┼──────────────┘           │
+│                       │                          │
+└───────────────────────┼──────────────────────────┘
+                        │
+                        ▼
+              ┌──────────────────┐
+              │   DASHBOARDS     │
+              │   & ALERTING     │
+              └──────────────────┘
+```
+
+---
+
+## 📈 Métricas (Prometheus)
+
+### SLIs (Service Level Indicators)
+
+Os indicadores que medimos:
+
+```typescript
+// src/monitoring/metrics.ts
+import { Counter, Histogram, Gauge } from 'prom-client';
+
+// === REQUEST METRICS ===
+export const httpRequestDuration = new Histogram({
+  name: 'http_request_duration_seconds',
+  help: 'Duration of HTTP requests in seconds',
+  labelNames: ['method', 'route', 'status_code'],
+  buckets: [0.01, 0.05, 0.1, 0.5, 1, 2, 5], // 10ms to 5s
+});
+
+export const httpRequestTotal = new Counter({
+  name: 'http_requests_total',
+  help: 'Total number of HTTP requests',
+  labelNames: ['method', 'route', 'status_code'],
+});
+
+// === BUSINESS METRICS ===
+export const coursesEnrollmentTotal = new Counter({
+  name: 'courses_enrollment_total',
+  help: 'Total number of course enrollments',
+  labelNames: ['course_id'],
+});
+
+export const lessonsCompletedTotal = new Counter({
+  name: 'lessons_completed_total',
+  help: 'Total number of lessons completed',
+  labelNames: ['course_id', 'lesson_id'],
+});
+
+export const certificatesIssuedTotal = new Counter({
+  name: 'certificates_issued_total',
+  help: 'Total number of certificates issued',
+  labelNames: ['course_id'],
+});
+
+// === DATABASE METRICS ===
+export const databaseConnectionsActive = new Gauge({
+  name: 'database_connections_active',
+  help: 'Number of active database connections',
+});
+
+export const databaseQueryDuration = new Histogram({
+  name: 'database_query_duration_seconds',
+  help: 'Duration of database queries',
+  labelNames: ['query_type', 'table'],
+  buckets: [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1],
+});
+
+// === CACHE METRICS ===
+export const cacheHitsTotal = new Counter({
+  name: 'cache_hits_total',
+  help: 'Total number of cache hits',
+  labelNames: ['cache_key'],
+});
+
+export const cacheMissesTotal = new Counter({
+  name: 'cache_misses_total',
+  help: 'Total number of cache misses',
+  labelNames: ['cache_key'],
+});
+
+// === VIDEO STREAMING METRICS ===
+export const videoStreamStartDuration = new Histogram({
+  name: 'video_stream_start_duration_seconds',
+  help: 'Time until video starts playing',
+  buckets: [0.5, 1, 2, 3, 5, 10],
+});
+
+export const videoBufferingEvents = new Counter({
+  name: 'video_buffering_events_total',
+  help: 'Total number of video buffering events',
+  labelNames: ['video_id', 'quality'],
+});
+```
+
+### SLOs (Service Level Objectives)
+
+Nossos objetivos de qualidade:
+
+```yaml
+# SLOs definition
+slos:
+  # Availability
+  - name: api_availability
+    target: 99.5%
+    measurement: (successful_requests / total_requests) * 100
+    window: 30d
+    
+  # Latency
+  - name: api_latency_p95
+    target: 200ms
+    measurement: http_request_duration_seconds{quantile="0.95"}
+    window: 7d
+    
+  - name: api_latency_p99
+    target: 500ms
+    measurement: http_request_duration_seconds{quantile="0.99"}
+    window: 7d
+    
+  # Error Rate
+  - name: api_error_rate
+    target: <0.1%
+    measurement: (5xx_responses / total_requests) * 100
+    window: 1d
+    
+  # Video Performance
+  - name: video_start_time
+    target: <3s
+    measurement: video_stream_start_duration_seconds{quantile="0.95"}
+    window: 7d
+```
+
+### Instrumentação no Código
+
+```typescript
+// src/common/interceptors/metrics.interceptor.ts
+@Injectable()
+export class MetricsInterceptor implements NestInterceptor {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+    const request = context.switchToHttp().getRequest();
+    const { method, route } = request;
+    
+    const end = httpRequestDuration.startTimer();
+    
+    return next.handle().pipe(
+      tap(() => {
+        const response = context.switchToHttp().getResponse();
+        const { statusCode } = response;
+        
+        // Record duration
+        end({ method, route: route.path, status_code: statusCode });
+        
+        // Count request
+        httpRequestTotal.inc({ method, route: route.path, status_code: statusCode });
+      }),
+      catchError((error) => {
+        end({ method, route: route.path, status_code: error.status || 500 });
+        httpRequestTotal.inc({ method, route: route.path, status_code: error.status || 500 });
+        throw error;
+      }),
+    );
+  }
+}
+
+// Aplicar globalmente
+app.useGlobalInterceptors(new MetricsInterceptor());
+```
+
+### Endpoint de Métricas
+
+```typescript
+// src/monitoring/metrics.controller.ts
+@Controller('metrics')
+export class MetricsController {
+  constructor(private readonly metricsService: MetricsService) {}
+
+  @Get()
+  async getMetrics(@Res() res: Response) {
+    res.set('Content-Type', register.contentType);
+    res.end(await register.metrics());
+  }
+
+  @Get('health')
+  async healthCheck() {
+    const health = await this.metricsService.checkHealth();
+    
+    return {
+      status: health.isHealthy ? 'ok' : 'degraded',
+      timestamp: new Date().toISOString(),
+      checks: {
+        database: health.database,
+        redis: health.redis,
+        keycloak: health.keycloak,
+        extrata_api: health.extraApi,
+      },
+    };
+  }
+}
+```
+
+---
+
+## 📝 Logs (Winston + Loki)
+
+### Estrutura de Logs
+
+```typescript
+// src/common/logger/logger.service.ts
+import * as winston from 'winston';
+import LokiTransport from 'winston-loki';
+
+export const logger = winston.createLogger({
+  level: process.env.LOG_LEVEL || 'info',
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.errors({ stack: true }),
+    winston.format.json(),
+  ),
+  defaultMeta: {
+    service: 'academy-backend',
+    environment: process.env.NODE_ENV,
+    version: process.env.APP_VERSION,
+  },
+  transports: [
+    // Console (desenvolvimento)
+    new winston.transports.Console({
+      format: winston.format.combine(
+        winston.format.colorize(),
+        winston.format.simple(),
+      ),
+    }),
+    
+    // Arquivo (produção)
+    new winston.transports.File({
+      filename: 'logs/error.log',
+      level: 'error',
+      maxsize: 10485760, // 10MB
+      maxFiles: 5,
+    }),
+    
+    new winston.transports.File({
+      filename: 'logs/combined.log',
+      maxsize: 10485760,
+      maxFiles: 10,
+    }),
+    
+    // Loki (produção)
+    new LokiTransport({
+      host: process.env.LOKI_URL,
+      labels: { app: 'academy-backend' },
+      json: true,
+      format: winston.format.json(),
+      replaceTimestamp: true,
+      onConnectionError: (err) => console.error(err),
+    }),
+  ],
+});
+
+// Contextualized logging
+export class LoggerService {
+  private context: string;
+
+  constructor(context: string) {
+    this.context = context;
+  }
+
+  log(message: string, meta?: any) {
+    logger.info(message, { context: this.context, ...meta });
+  }
+
+  error(message: string, trace?: string, meta?: any) {
+    logger.error(message, {
+      context: this.context,
+      stack: trace,
+      ...meta,
+    });
+  }
+
+  warn(message: string, meta?: any) {
+    logger.warn(message, { context: this.context, ...meta });
+  }
+
+  debug(message: string, meta?: any) {
+    logger.debug(message, { context: this.context, ...meta });
+  }
+
+  // Structured logging for specific events
+  logUserAction(userId: string, action: string, details: any) {
+    logger.info('user_action', {
+      context: this.context,
+      user_id: userId,
+      action,
+      details,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  logAPICall(endpoint: string, duration: number, statusCode: number) {
+    logger.info('api_call', {
+      context: this.context,
+      endpoint,
+      duration_ms: duration,
+      status_code: statusCode,
+      timestamp: new Date().toISOString(),
+    });
+  }
+}
+```
+
+### Uso nos Services
+
+```typescript
+// src/courses/courses.service.ts
+@Injectable()
+export class CoursesService {
+  private readonly logger = new LoggerService(CoursesService.name);
+
+  async createCourse(data: CreateCourseDto, userId: string) {
+    this.logger.log('Creating new course', { title: data.title, created_by: userId });
+
+    try {
+      const course = await this.coursesRepo.create(data);
+      
+      this.logger.log('Course created successfully', {
+        course_id: course.id,
+        title: course.title,
+      });
+
+      // Log para auditoria
+      this.logger.logUserAction(userId, 'course_created', {
+        course_id: course.id,
+        title: course.title,
+      });
+
+      return course;
+    } catch (error) {
+      this.logger.error('Failed to create course', error.stack, {
+        data,
+        user_id: userId,
+      });
+      throw error;
+    }
+  }
+}
+```
+
+### Queries de Logs Importantes
+
+```promql
+# LogQL (Loki Query Language)
+
+# Erros nas últimas 1h
+{app="academy-backend"} |= "error" | json | line_format "{{.timestamp}} [{{.level}}] {{.message}}"
+
+# Ações de um usuário específico
+{app="academy-backend"} | json | user_id="abc-123" | line_format "{{.action}}: {{.details}}"
+
+# Latência de API calls > 1s
+{app="academy-backend"} | json | duration_ms > 1000
+
+# Rate de erros por minuto
+sum(rate({app="academy-backend", level="error"}[1m]))
+
+# Top 10 endpoints mais lentos
+topk(10, 
+  avg_over_time({app="academy-backend"} 
+    | json 
+    | unwrap duration_ms [5m]) by (endpoint)
+)
+```
+
+---
+
+## 🔍 Distributed Tracing (Jaeger)
+
+### Configuração do Tracer
+
+```typescript
+// src/common/tracing/tracer.ts
+import { initTracer } from 'jaeger-client';
+import * as opentracing from 'opentracing';
+
+export function initializeTracing() {
+  const config = {
+    serviceName: 'academy-backend',
+    sampler: {
+      type: 'probabilistic',
+      param: process.env.NODE_ENV === 'production' ? 0.1 : 1.0, // 10% em prod
+    },
+    reporter: {
+      logSpans: true,
+      agentHost: process.env.JAEGER_AGENT_HOST || 'localhost',
+      agentPort: 6831,
+    },
+  };
+
+  const options = {
+    tags: {
+      'academy.version': process.env.APP_VERSION,
+      'academy.environment': process.env.NODE_ENV,
+    },
+    logger: {
+      info: (msg) => logger.info(msg),
+      error: (msg) => logger.error(msg),
+    },
+  };
+
+  const tracer = initTracer(config, options);
+  opentracing.initGlobalTracer(tracer);
+  
+  return tracer;
+}
+```
+
+### Instrumentação de Requests
+
+```typescript
+// src/common/interceptors/tracing.interceptor.ts
+@Injectable()
+export class TracingInterceptor implements NestInterceptor {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+    const request = context.switchToHttp().getRequest();
+    const tracer = opentracing.globalTracer();
+    
+    // Extract parent span from headers (if exists)
+    const parentSpanContext = tracer.extract(
+      opentracing.FORMAT_HTTP_HEADERS,
+      request.headers,
+    );
+    
+    // Create span
+    const span = tracer.startSpan(request.route.path, {
+      childOf: parentSpanContext,
+      tags: {
+        [opentracing.Tags.SPAN_KIND]: opentracing.Tags.SPAN_KIND_RPC_SERVER,
+        [opentracing.Tags.HTTP_METHOD]: request.method,
+        [opentracing.Tags.HTTP_URL]: request.url,
+      },
+    });
+    
+    // Attach span to request
+    request.span = span;
+    
+    return next.handle().pipe(
+      tap(() => {
+        const response = context.switchToHttp().getResponse();
+        span.setTag(opentracing.Tags.HTTP_STATUS_CODE, response.statusCode);
+        span.finish();
+      }),
+      catchError((error) => {
+        span.setTag(opentracing.Tags.ERROR, true);
+        span.log({
+          event: 'error',
+          message: error.message,
+          stack: error.stack,
+        });
+        span.finish();
+        throw error;
+      }),
+    );
+  }
+}
+```
+
+### Tracing Database Queries
+
+```typescript
+// src/common/database/traced-repository.ts
+export class TracedRepository<T> extends Repository<T> {
+  async find(options?: FindManyOptions<T>): Promise<T[]> {
+    const span = opentracing.globalTracer().startSpan('database.find', {
+      tags: {
+        'db.type': 'postgresql',
+        'db.table': this.metadata.tableName,
+      },
+    });
+
+    try {
+      const result = await super.find(options);
+      span.setTag('db.rows_returned', result.length);
+      return result;
+    } catch (error) {
+      span.setTag(opentracing.Tags.ERROR, true);
+      span.log({ event: 'error', message: error.message });
+      throw error;
+    } finally {
+      span.finish();
+    }
+  }
+}
+```
+
+### Tracing External API Calls
+
+```typescript
+// src/integration/extrata-client.ts
+export class ExtrataApiClient {
+  async getUser(keycloakId: string) {
+    const span = opentracing.globalTracer().startSpan('extrata_api.get_user', {
+      tags: {
+        'http.method': 'GET',
+        'http.url': `${EXTRATA_API_URL}/users/${keycloakId}`,
+      },
+    });
+
+    try {
+      const response = await fetch(`${EXTRATA_API_URL}/users/${keycloakId}`, {
+        headers: {
+          'Authorization': `Bearer ${this.accessToken}`,
+          // Inject trace context
+          ...opentracing.globalTracer().inject(span, opentracing.FORMAT_HTTP_HEADERS, {}),
+        },
+      });
+
+      span.setTag('http.status_code', response.status);
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      span.setTag(opentracing.Tags.ERROR, true);
+      span.log({ event: 'error', message: error.message });
+      throw error;
+    } finally {
+      span.finish();
+    }
+  }
+}
+```
+
+---
+
+## 📊 Dashboards (Grafana)
+
+### Dashboard: Application Overview
+
+```json
+{
+  "dashboard": {
+    "title": "Academy - Application Overview",
+    "panels": [
+      {
+        "title": "Request Rate",
+        "targets": [{
+          "expr": "rate(http_requests_total[5m])"
+        }],
+        "type": "graph"
+      },
+      {
+        "title": "Error Rate",
+        "targets": [{
+          "expr": "rate(http_requests_total{status_code=~\"5..\"}[5m])"
+        }],
+        "type": "graph",
+        "alert": {
+          "conditions": [{
+            "evaluator": { "params": [0.01], "type": "gt" },
+            "query": { "params": ["A", "5m", "now"] }
+          }]
+        }
+      },
+      {
+        "title": "P95 Latency",
+        "targets": [{
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))"
+        }],
+        "type": "graph"
+      },
+      {
+        "title": "Active Users (5min)",
+        "targets": [{
+          "expr": "count(count by (user_id) (rate(http_requests_total[5m]) > 0))"
+        }],
+        "type": "stat"
+      }
+    ]
+  }
+}
+```
+
+### Dashboard: Business Metrics
+
+```json
+{
+  "dashboard": {
+    "title": "Academy - Business Metrics",
+    "panels": [
+      {
+        "title": "Enrollments (24h)",
+        "targets": [{
+          "expr": "increase(courses_enrollment_total[24h])"
+        }],
+        "type": "stat"
+      },
+      {
+        "title": "Lessons Completed (24h)",
+        "targets": [{
+          "expr": "increase(lessons_completed_total[24h])"
+        }],
+        "type": "stat"
+      },
+      {
+        "title": "Certificates Issued (24h)",
+        "targets": [{
+          "expr": "increase(certificates_issued_total[24h])"
+        }],
+        "type": "stat"
+      },
+      {
+        "title": "Top Courses by Enrollment",
+        "targets": [{
+          "expr": "topk(10, rate(courses_enrollment_total[24h]))"
+        }],
+        "type": "bargauge"
+      },
+      {
+        "title": "Completion Rate by Course",
+        "targets": [{
+          "expr": "certificates_issued_total / courses_enrollment_total * 100"
+        }],
+        "type": "table"
+      }
+    ]
+  }
+}
+```
+
+### Dashboard: Infrastructure
+
+```json
+{
+  "dashboard": {
+    "title": "Academy - Infrastructure",
+    "panels": [
+      {
+        "title": "CPU Usage",
+        "targets": [{
+          "expr": "rate(process_cpu_seconds_total[5m]) * 100"
+        }],
+        "type": "graph"
+      },
+      {
+        "title": "Memory Usage",
+        "targets": [{
+          "expr": "process_resident_memory_bytes / 1024 / 1024"
+        }],
+        "type": "graph"
+      },
+      {
+        "title": "Database Connections",
+        "targets": [{
+          "expr": "database_connections_active"
+        }],
+        "type": "graph"
+      },
+      {
+        "title": "Cache Hit Rate",
+        "targets": [{
+          "expr": "cache_hits_total / (cache_hits_total + cache_misses_total) * 100"
+        }],
+        "type": "gauge"
+      }
+    ]
+  }
+}
+```
+
+---
+
+## 🚨 Alertas (Prometheus Alertmanager)
+
+### Regras de Alerta
+
+```yaml
+# prometheus/alerts.yml
+groups:
+  - name: academy_critical
+    interval: 30s
+    rules:
+      # High Error Rate
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status_code=~"5.."}[5m]) > 0.01
+        for: 2m
+        labels:
+          severity: critical
+          team: backend
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold: 1%)"
+          
+      # API Latency
+      - alert: HighAPILatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "API latency is high"
+          description: "P95 latency is {{ $value }}s (threshold: 500ms)"
+          
+      # Database Issues
+      - alert: HighDatabaseLatency
+        expr: histogram_quantile(0.95, rate(database_query_duration_seconds_bucket[5m])) > 0.1
+        for: 3m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "Database queries are slow"
+          description: "P95 query time is {{ $value }}s (threshold: 100ms)"
+          
+      - alert: DatabaseConnectionPoolExhausted
+        expr: database_connections_active / database_connections_max > 0.9
+        for: 2m
+        labels:
+          severity: critical
+          team: backend
+        annotations:
+          summary: "Database connection pool nearly exhausted"
+          description: "{{ $value | humanizePercentage }} of connections in use"
+          
+      # Service Down
+      - alert: ServiceDown
+        expr: up{job="academy-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: sre
+        annotations:
+          summary: "Academy backend is down"
+          description: "Service has been down for more than 1 minute"
+          
+      # Video Streaming Issues
+      - alert: HighVideoBuffering
+        expr: rate(video_buffering_events_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "High video buffering rate"
+          description: "Buffering rate: {{ $value | humanize }} events/sec"
+          
+  - name: academy_business
+    interval: 1m
+    rules:
+      # Low Enrollment Rate
+      - alert: LowEnrollmentRate
+        expr: rate(courses_enrollment_total[1h]) < 1
+        for: 2h
+        labels:
+          severity: warning
+          team: product
+        annotations:
+          summary: "Low enrollment rate"
+          description: "Only {{ $value | humanize }} enrollments/hour in last 2h"
+          
+      # Certificate Generation Failed
+      - alert: CertificateGenerationFailed
+        expr: increase(certificate_generation_errors_total[5m]) > 0
+        labels:
+          severity: critical
+          team: backend
+        annotations:
+          summary: "Certificate generation failing"
+          description: "{{ $value }} certificate generation failures in last 5min"
+```
+
+### Configuração de Notificações
+
+```yaml
+# alertmanager/config.yml
+global:
+  resolve_timeout: 5m
+  slack_api_url: 'https://hooks.slack.com/services/YOUR/WEBHOOK/URL'
+
+route:
+  group_by: ['alertname', 'severity']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 12h
+  receiver: 'team-slack'
+  
+  routes:
+    # Critical alerts -> PagerDuty + Slack
+    - match:
+        severity: critical
+      receiver: 'pagerduty-critical'
+      continue: true
+    
+    # Critical alerts -> Also Slack
+    - match:
+        severity: critical
+      receiver: 'slack-critical'
+    
+    # Warnings -> Only Slack
+    - match:
+        severity: warning
+      receiver: 'slack-warnings'
+
+receivers:
+  - name: 'team-slack'
+    slack_configs:
+      - channel: '#academy-alerts'
+        title: '{{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+        
+  - name: 'slack-critical'
+    slack_configs:
+      - channel: '#academy-critical'
+        title: '🚨 CRITICAL: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+        color: 'danger'
+        
+  - name: 'slack-warnings'
+    slack_configs:
+      - channel: '#academy-alerts'
+        title: '⚠️ WARNING: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+        color: 'warning'
+        
+  - name: 'pagerduty-critical'
+    pagerduty_configs:
+      - service_key: 'YOUR_PAGERDUTY_SERVICE_KEY'
+        description: '{{ .GroupLabels.alertname }}: {{ .CommonAnnotations.summary }}'
+```
+
+---
+
+## 📚 Runbooks
+
+### Runbook: High Error Rate
+
+```markdown
+# High Error Rate (>1%)
+
+## Severity: CRITICAL
+
+## Description
+The API error rate has exceeded 1% for more than 2 minutes.
+
+## Impact
+Users are experiencing errors when using the platform.
+
+## Diagnosis
+
+1. Check Grafana dashboard: https://grafana.academy/d/errors
+2. Look at error logs:
+   ```bash
+   kubectl logs -f deployment/academy-backend --tail=100 | grep "ERROR"
+   ```
+3. Check Jaeger for failed traces:
+   ```
+   https://jaeger.academy/search?service=academy-backend&tags=error:true
+   ```
+
+## Possible Causes
+
+- Database connection issues
+- External API (Extrata) down
+- Keycloak authentication issues
+- Code bug introduced in recent deploy
+
+## Resolution Steps
+
+### If Database Issue:
+```bash
+# Check database health
+kubectl exec -it postgres-0 -- psql -U academy -c "SELECT 1;"
+
+# Check connection pool
+SELECT count(*) FROM pg_stat_activity WHERE datname = 'academy';
+
+# If needed, restart pods to reset connections
+kubectl rollout restart deployment/academy-backend
+```
+
+### If Extrata API Issue:
+```bash
+# Check Extrata API status
+curl https://api.extrata.gov.br/health
+
+# Enable fallback mode (use cached data)
+kubectl set env deployment/academy-backend EXTRATA_FALLBACK_MODE=true
+```
+
+### If Recent Deploy:
+```bash
+# Rollback to previous version
+kubectl rollout undo deployment/academy-backend
+
+# Monitor error rate
+watch -n 5 'curl -s http://localhost:9090/api/v1/query?query=rate(http_requests_total{status_code=~"5.."}[5m])'
+```
+
+## Prevention
+
+- Implement circuit breakers for external APIs
+- Add more comprehensive E2E tests
+- Use canary deployments
+
+## Escalation
+
+If issue persists > 15 minutes:
+- Escalate to: Tech Lead
+- Contact: +55 XX XXXXX-XXXX
+- Create incident in: https://status.academy.extrata.gov.br
+```
+
+### Runbook: Database Connection Pool Exhausted
+
+```markdown
+# Database Connection Pool Exhausted
+
+## Severity: CRITICAL
+
+## Description
+90%+ of database connections are in use.
+
+## Diagnosis
+
+```sql
+-- Check active connections
+SELECT count(*), state 
+FROM pg_stat_activity 
+WHERE datname = 'academy' 
+GROUP BY state;
+
+-- Check long-running queries
+SELECT pid, now() - pg_stat_activity.query_start AS duration, query 
+FROM pg_stat_activity 
+WHERE state = 'active' 
+  AND now() - pg_stat_activity.query_start > interval '1 minute';
+```
+
+## Resolution
+
+```bash
+# Increase connection pool size (temporary)
+kubectl set env deployment/academy-backend DB_POOL_SIZE=30
+
+# Kill long-running queries (if safe)
+SELECT pg_terminate_backend(pid) FROM pg_stat_activity 
+WHERE state = 'active' 
+  AND now() - pg_stat_activity.query_start > interval '5 minutes';
+
+# Restart pods to reset connections
+kubectl rollout restart deployment/academy-backend
+```
+
+## Prevention
+
+- Review slow queries and add indexes
+- Implement query timeout
+- Use read replicas for heavy queries
+```
+
+---
+
+## ✅ Monitoring Checklist
+
+### Setup (Pré-produção)
+- [ ] Prometheus instalado e configurado
+- [ ] Grafana instalado com datasources
+- [ ] Loki configurado para logs
+- [ ] Jaeger configurado para tracing
+- [ ] Alertmanager configurado
+- [ ] Slack webhook criado
+- [ ] PagerDuty integrado (critical alerts)
+- [ ] Dashboards criados
+- [ ] Regras de alerta configuradas
+- [ ] Runbooks documentados
+
+### Métricas (Instrumentação)
+- [ ] HTTP requests instrumentados
+- [ ] Database queries instrumentados
+- [ ] Cache hits/misses rastreados
+- [ ] Business metrics implementados
+- [ ] External API calls rastreados
+- [ ] Video streaming metrics
+- [ ] /metrics endpoint exposto
+
+### Logs
+- [ ] Structured logging implementado
+- [ ] Log levels configurados
+- [ ] Rotation configurada
+- [ ] Loki transport configurado
+- [ ] Sensitive data não é logado
+- [ ] Request IDs em todos os logs
+- [ ] Correlation IDs para tracing
+
+### Alertas
+- [ ] SLOs definidos
+- [ ] Alertas para SLO violations
+- [ ] Alertas de infraestrutura
+- [ ] Alertas de negócio
+- [ ] Testes de alerta realizados
+- [ ] On-call rotation definida
+- [ ] Escalation policies configuradas
+
+### Dashboards
+- [ ] Application health dashboard
+- [ ] Business metrics dashboard
+- [ ] Infrastructure dashboard
+- [ ] SLO dashboard
+- [ ] Video streaming dashboard
+- [ ] Dashboards compartilhados com time
+
+### Operacional
+- [ ] Runbooks para incidentes comuns
+- [ ] Postmortem template criado
+- [ ] Incident response plan documentado
+- [ ] Team treinado em ferramentas
+- [ ] Simulação de incidentes realizada
+
+---
+
+**Próximo documento**: [14-USER-DOCUMENTATION.md](./14-USER-DOCUMENTATION.md)

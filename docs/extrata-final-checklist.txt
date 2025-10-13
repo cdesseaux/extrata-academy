@@ -1,0 +1,548 @@
+# ✅ EXTRATA ACADEMY - Checklist Final de Implementação
+
+Este documento é seu guia definitivo para implementar o Extrata Academy do zero. Marque cada item conforme completa.
+
+---
+
+## 📦 FASE 0: SETUP INICIAL (Semana 1)
+
+### Dia 1-2: Estrutura e Documentação
+
+- [ ] **Criar pasta do projeto**
+  ```bash
+  mkdir extrata-academy && cd extrata-academy
+  ```
+
+- [ ] **Criar estrutura de pastas**
+  ```bash
+  mkdir -p {backend,frontend,shared,docs,infrastructure,scripts,.github/workflows}
+  mkdir -p docs/assets/{diagrams,wireframes,screenshots}
+  mkdir -p infrastructure/{docker,kubernetes,terraform}
+  ```
+
+- [ ] **Copiar todos os documentos para `docs/`**
+  - [ ] 00-PROJECT-STRUCTURE.md
+  - [ ] 01-EXECUTIVE-SUMMARY.md
+  - [ ] 02-REQUIREMENTS.md
+  - [ ] 03-ARCHITECTURE.md
+  - [ ] 04-DATABASE-DESIGN.md
+  - [ ] 05-API-SPECIFICATION.md
+  - [ ] 06-FRONTEND-DESIGN.md
+  - [ ] 07-DEVELOPMENT-GUIDE.md
+  - [ ] 08-TESTING-STRATEGY.md
+  - [ ] 09-DEPLOYMENT-GUIDE.md
+  - [ ] 10-IMPLEMENTATION-ROADMAP.md
+
+- [ ] **Copiar arquivos de configuração para raiz**
+  - [ ] README.md
+  - [ ] CONTRIBUTING.md
+  - [ ] docker-compose.yml
+  - [ ] .env.example → .env
+  - [ ] .gitignore
+
+- [ ] **Copiar scripts para `scripts/`**
+  - [ ] setup-dev.sh
+  - [ ] seed-database.ts
+  - [ ] check-quality.sh
+  - [ ] Tornar executáveis: `chmod +x scripts/*.sh`
+
+- [ ] **Revisar e aprovar documentação**
+  - [ ] Sponsor aprovou 01-EXECUTIVE-SUMMARY.md
+  - [ ] PO aprovou 02-REQUIREMENTS.md
+  - [ ] Tech Lead aprovou 03-ARCHITECTURE.md
+
+### Dia 3: Docker e Infraestrutura
+
+- [ ] **Inicializar Git**
+  ```bash
+  git init
+  git add .
+  git commit -m "chore: initial project setup"
+  ```
+
+- [ ] **Criar repositório no GitHub/GitLab**
+  - [ ] Repositório criado
+  - [ ] Branch protection configurada (main)
+  - [ ] Colaboradores adicionados
+
+- [ ] **Subir Docker infrastructure**
+  ```bash
+  docker-compose up -d postgres redis keycloak
+  ```
+
+- [ ] **Verificar serviços**
+  - [ ] PostgreSQL: `docker exec -it extrata-academy-postgres psql -U academy -c "SELECT 1;"`
+  - [ ] Redis: `docker exec -it extrata-academy-redis redis-cli ping`
+  - [ ] Keycloak: `curl http://localhost:8080`
+
+- [ ] **Configurar Keycloak**
+  - [ ] Acessar http://localhost:8080 (admin/admin)
+  - [ ] Criar Realm "extrata"
+  - [ ] Criar Client "academy-backend"
+  - [ ] Criar Client "academy-frontend"
+  - [ ] Criar usuários de teste (admin, student, instructor, auditor)
+
+### Dia 4: Backend Setup
+
+- [ ] **Inicializar NestJS**
+  ```bash
+  cd backend
+  npx @nestjs/cli new . --strict --package-manager npm
+  ```
+
+- [ ] **Instalar dependências principais**
+  ```bash
+  npm install --save @nestjs/config @nestjs/typeorm typeorm pg \
+    @nestjs/passport passport passport-jwt @nestjs/jwt \
+    @nestjs/swagger class-validator class-transformer bcrypt \
+    redis ioredis @nestjs/cache-manager
+  
+  npm install --save-dev @types/passport-jwt @types/bcrypt
+  ```
+
+- [ ] **Configurar arquivos base**
+  - [ ] .env (copiar de .env.example)
+  - [ ] database.config.ts
+  - [ ] app.module.ts (imports base)
+
+- [ ] **Criar estrutura de módulos**
+  ```bash
+  nest g module database
+  nest g module config
+  nest g module auth
+  nest g module users
+  nest g module courses
+  ```
+
+- [ ] **Configurar TypeORM**
+  - [ ] Database config
+  - [ ] Entities folder
+  - [ ] Migrations folder
+
+- [ ] **Testar backend**
+  ```bash
+  npm run start:dev
+  # Acessar http://localhost:4000
+  ```
+
+### Dia 5: Frontend Setup
+
+- [ ] **Inicializar Next.js**
+  ```bash
+  cd frontend
+  npx create-next-app@latest . --typescript --tailwind --app --src-dir
+  ```
+
+- [ ] **Instalar dependências**
+  ```bash
+  npm install @tanstack/react-query zustand axios \
+    zod react-hook-form @hookform/resolvers lucide-react \
+    clsx tailwind-merge next-themes
+  ```
+
+- [ ] **Setup shadcn/ui**
+  ```bash
+  npx shadcn-ui@latest init
+  npx shadcn-ui@latest add button card input label select badge avatar skeleton
+  ```
+
+- [ ] **Criar estrutura base**
+  - [ ] app/(auth)/login/page.tsx
+  - [ ] app/(platform)/layout.tsx
+  - [ ] app/(platform)/dashboard/page.tsx
+  - [ ] components/ui/ (shadcn)
+  - [ ] lib/api/client.ts
+
+- [ ] **Copiar componente exemplo**
+  - [ ] CourseCard.tsx para components/academy/
+
+- [ ] **Testar frontend**
+  ```bash
+  npm run dev
+  # Acessar http://localhost:3000
+  ```
+
+---
+
+## 🔧 FASE 1: BACKEND CORE (Semanas 2-3)
+
+### Semana 2: Database & Auth
+
+- [ ] **Criar schema do banco (04-DATABASE-DESIGN.md)**
+  - [ ] Migration: users table
+  - [ ] Migration: courses, modules, lessons tables
+  - [ ] Migration: enrollments, lesson_progress tables
+  - [ ] Migration: triggers e functions
+
+- [ ] **Rodar migrations**
+  ```bash
+  npm run typeorm migration:run
+  ```
+
+- [ ] **Seed database**
+  ```bash
+  npm run seed
+  ```
+
+- [ ] **Implementar autenticação**
+  - [ ] Keycloak strategy
+  - [ ] JWT guards
+  - [ ] Roles guard
+  - [ ] Current user decorator
+
+- [ ] **Testes de auth**
+  - [ ] Unit tests: auth.service.spec.ts
+  - [ ] Integration tests: auth.e2e-spec.ts
+
+### Semana 3: Courses Module
+
+- [ ] **Implementar Courses CRUD**
+  - [ ] CourseEntity
+  - [ ] CoursesController (GET, POST, PATCH, DELETE)
+  - [ ] CoursesService (business logic)
+  - [ ] CoursesRepository
+  - [ ] DTOs (create, update, response, filters)
+
+- [ ] **Implementar Modules e Lessons**
+  - [ ] ModuleEntity
+  - [ ] LessonEntity
+  - [ ] Controllers e Services
+
+- [ ] **Implementar Enrollments**
+  - [ ] EnrollmentEntity
+  - [ ] POST /enrollments
+  - [ ] GET /enrollments/my-courses
+
+- [ ] **Implementar Progress Tracking**
+  - [ ] LessonProgressEntity
+  - [ ] POST /progress/lessons/:id/complete
+  - [ ] PATCH /progress/lessons/:id
+  - [ ] Cálculo automático de progress_percentage
+
+- [ ] **Swagger documentation**
+  - [ ] @ApiTags em todos os controllers
+  - [ ] @ApiOperation em todos os endpoints
+  - [ ] DTOs documentados
+  - [ ] Acessar http://localhost:4000/api/docs
+
+- [ ] **Testes completos**
+  - [ ] Unit tests para todos os services
+  - [ ] Integration tests para todos os endpoints
+  - [ ] Coverage > 80%
+
+---
+
+## 🎨 FASE 2: FRONTEND CORE (Semanas 4-5)
+
+### Semana 4: Layout e Auth
+
+- [ ] **Implementar autenticação frontend**
+  - [ ] Login page
+  - [ ] Keycloak redirect
+  - [ ] Token management (Zustand)
+  - [ ] Protected routes
+  - [ ] Auth context
+
+- [ ] **Criar layout principal**
+  - [ ] Top navbar (logo, nav, search, user menu)
+  - [ ] Sidebar (navigation)
+  - [ ] Responsive (mobile bottom nav)
+  - [ ] Dark mode toggle
+
+- [ ] **Design system**
+  - [ ] Configurar variáveis CSS (06-FRONTEND-DESIGN.md)
+  - [ ] Implementar cores, tipografia, spacing
+  - [ ] Componentes base (Button, Card, etc)
+
+- [ ] **Dashboard**
+  - [ ] Stats cards (cursos, progresso, horas, certificados)
+  - [ ] "Continuar aprendendo" section
+  - [ ] Cursos recomendados
+  - [ ] Progresso semanal (chart)
+
+### Semana 5: Courses e Player
+
+- [ ] **Lista de cursos**
+  - [ ] Grid de CourseCard
+  - [ ] Filtros (categoria, nível)
+  - [ ] Busca
+  - [ ] Paginação
+
+- [ ] **Detalhes do curso**
+  - [ ] Hero com thumbnail
+  - [ ] Descrição e stats
+  - [ ] Lista de módulos/lições
+  - [ ] Botão "Iniciar" / "Continuar"
+  - [ ] Progress bar
+
+- [ ] **Course Player**
+  - [ ] Layout (sidebar + content area)
+  - [ ] Video player (Plyr.io ou Video.js)
+  - [ ] Progress tracking (save a cada 10s)
+  - [ ] Text lesson renderer
+  - [ ] Quiz component
+  - [ ] Navegação prev/next
+
+- [ ] **Profile & Achievements**
+  - [ ] User info
+  - [ ] XP e nível
+  - [ ] Badges display
+  - [ ] Histórico de cursos
+  - [ ] Certificados
+
+---
+
+## ⭐ FASE 3: FEATURES AVANÇADAS (Semanas 6-8)
+
+### Semana 6: Gamificação
+
+- [ ] **Backend: Sistema de XP**
+  - [ ] user_xp table
+  - [ ] xp_transactions table
+  - [ ] XPService (award, calculate level)
+  - [ ] Triggers para award XP automático
+
+- [ ] **Backend: Achievements**
+  - [ ] achievements table
+  - [ ] user_achievements table
+  - [ ] AchievementsService
+  - [ ] Auto-unlock logic
+
+- [ ] **Backend: Leaderboard**
+  - [ ] GET /gamification/leaderboard
+  - [ ] Filtros (global, municipality, period)
+  - [ ] Queries otimizadas
+
+- [ ] **Frontend: Gamification UI**
+  - [ ] XP notification (toast)
+  - [ ] Level up modal
+  - [ ] Progress para próximo nível
+  - [ ] Leaderboard page
+  - [ ] Badges showcase
+
+### Semana 7: Certificados e Quizzes
+
+- [ ] **Backend: Certificates**
+  - [ ] certificates table
+  - [ ] PDFKit integration
+  - [ ] QR code generation
+  - [ ] POST /certificates (generate)
+  - [ ] GET /certificates/:code/validate
+
+- [ ] **Backend: Quizzes completo**
+  - [ ] quizzes, questions, quiz_attempts tables
+  - [ ] POST /quizzes/:id/attempts
+  - [ ] POST /quizzes/:id/attempts/:attemptId/submit
+  - [ ] Grading automático
+  - [ ] Max attempts logic
+
+- [ ] **Frontend: Certificates**
+  - [ ] Certificate gallery
+  - [ ] Download PDF
+  - [ ] Share to LinkedIn
+  - [ ] Validation page
+
+- [ ] **Frontend: Quiz experience**
+  - [ ] Question renderer (multiple choice, true/false)
+  - [ ] Timer
+  - [ ] Progress indicator
+  - [ ] Results page
+  - [ ] Retry logic
+
+### Semana 8: Analytics e Admin
+
+- [ ] **Backend: Analytics**
+  - [ ] learning_analytics table
+  - [ ] Event tracking
+  - [ ] GET /analytics/dashboard
+  - [ ] Aggregation queries
+  - [ ] Export to CSV
+
+- [ ] **Backend: Admin endpoints**
+  - [ ] GET /admin/users
+  - [ ] PATCH /admin/users/:id
+  - [ ] GET /admin/courses/stats
+  - [ ] DELETE /admin/courses/:id
+
+- [ ] **Frontend: Admin dashboard**
+  - [ ] Metrics cards
+  - [ ] Charts (Chart.js ou Recharts)
+  - [ ] Popular courses
+  - [ ] Engagement metrics
+  - [ ] Export buttons
+
+- [ ] **Frontend: Course CMS**
+  - [ ] Rich text editor (TipTap ou Slate)
+  - [ ] Media upload
+  - [ ] Drag & drop reordering
+  - [ ] Preview mode
+  - [ ] Publish/unpublish
+
+---
+
+## 🔗 FASE 4: INTEGRATION & POLISH (Semanas 9-10)
+
+### Semana 9: Integração
+
+- [ ] **Integração com Extrata**
+  - [ ] SSO sincronização de usuários
+  - [ ] Roles mapping
+  - [ ] Municípios sync
+  - [ ] Webhooks (se necessário)
+
+- [ ] **Help widget in-app**
+  - [ ] Context-aware help
+  - [ ] Search docs
+  - [ ] Link para cursos relevantes
+
+- [ ] **Performance optimization**
+  - [ ] Backend: caching (Redis)
+  - [ ] Backend: query optimization
+  - [ ] Frontend: code splitting
+  - [ ] Frontend: image optimization
+  - [ ] Frontend: lazy loading
+
+### Semana 10: Testes e Polish
+
+- [ ] **Testes E2E (Playwright)**
+  - [ ] Login flow
+  - [ ] Complete course flow
+  - [ ] Enrollment flow
+  - [ ] Quiz completion flow
+  - [ ] Certificate generation
+
+- [ ] **Load testing (K6)**
+  - [ ] Script de load testing
+  - [ ] Target: 500 concurrent users
+  - [ ] Performance benchmarks
+
+- [ ] **UI polish**
+  - [ ] Loading states em todas as ações
+  - [ ] Error handling com mensagens claras
+  - [ ] Empty states com CTA
+  - [ ] Animations suaves
+  - [ ] Accessibility audit
+
+- [ ] **Documentação**
+  - [ ] README atualizado
+  - [ ] API docs completos (Swagger)
+  - [ ] User guide
+  - [ ] Admin guide
+
+---
+
+## 🚀 FASE 5: BETA & LAUNCH (Semanas 11-12)
+
+### Semana 11: Beta
+
+- [ ] **Deploy staging**
+  - [ ] Ambiente configurado
+  - [ ] CI/CD to staging (GitHub Actions)
+  - [ ] Monitoring setup (CloudWatch/Grafana)
+  - [ ] Backup automático configurado
+
+- [ ] **Beta testing**
+  - [ ] Selecionar 50 usuários beta
+  - [ ] Onboarding email enviado
+  - [ ] Suporte dedicado ativo
+  - [ ] Feedback form disponível
+
+- [ ] **Coletar e implementar feedback**
+  - [ ] Revisar analytics
+  - [ ] Ler feedback forms
+  - [ ] Priorizar bugs/melhorias
+  - [ ] Implementar ajustes críticos
+
+### Semana 12: Launch
+
+- [ ] **Pre-launch checklist**
+  - [ ] Todos os testes passando
+  - [ ] Performance targets atingidos (<2s load, <200ms API)
+  - [ ] Security audit aprovado
+  - [ ] Backup completo feito
+  - [ ] Rollback plan preparado
+  - [ ] Documentação completa
+
+- [ ] **Deploy produção**
+  - [ ] Configurar domínio (academy.extrata.gov.br)
+  - [ ] SSL certificates
+  - [ ] CDN setup (CloudFront)
+  - [ ] Final smoke tests
+
+- [ ] **Data migration**
+  - [ ] Migrar dados de beta
+  - [ ] Validar integridade
+  - [ ] Backup pré-launch
+
+- [ ] **GO LIVE! 🎉**
+  - [ ] Announcement email
+  - [ ] Treinamento gravado disponível
+  - [ ] Suporte ativo
+  - [ ] Monitoring 24/7
+
+- [ ] **Post-launch (primeiros 7 dias)**
+  - [ ] Monitorar métricas diariamente
+  - [ ] Fix hotfixes (se necessário)
+  - [ ] Coletar feedback inicial
+  - [ ] Planejar next iteration
+
+---
+
+## 📊 MÉTRICAS DE SUCESSO (30 dias pós-launch)
+
+### Técnicas
+- [ ] Uptime >= 99.5%
+- [ ] API response time < 200ms (p95)
+- [ ] Page load time < 2s
+- [ ] Zero bugs críticos
+
+### Produto
+- [ ] 500+ usuários ativos
+- [ ] 70%+ engagement rate
+- [ ] 60%+ course completion rate
+- [ ] NPS > 50
+
+### Negócio
+- [ ] 80% dos técnicos certificados
+- [ ] 50% redução em tickets de suporte
+- [ ] ROI positivo demonstrado
+- [ ] Feedback positivo dos municípios
+
+---
+
+## 🎓 PRÓXIMOS PASSOS (Pós-MVP)
+
+- [ ] Mobile apps nativos (iOS/Android)
+- [ ] Live classes / webinars
+- [ ] Comunidade integrada (Discourse)
+- [ ] AI tutor / chatbot
+- [ ] Marketplace de cursos
+- [ ] Multi-idioma
+- [ ] Advanced analytics com ML
+- [ ] Integração com mais sistemas governamentais
+
+---
+
+## ✅ APROVAÇÕES FINAIS
+
+- [ ] **Sponsor**: Aprovado para production
+- [ ] **Product Owner**: Features completas conforme requisitos
+- [ ] **Tech Lead**: Arquitetura e código aprovados
+- [ ] **QA Lead**: Testes passando, quality gates ok
+- [ ] **Security**: Security audit aprovado
+- [ ] **DevOps**: Infraestrutura pronta
+
+---
+
+**Status Atual**: ___________  
+**Data de Início**: ___________  
+**Data Target Launch**: ___________  
+**Data Real Launch**: ___________
+
+---
+
+**🎉 PARABÉNS! Você tem um roadmap completo para o sucesso!**
+
+Siga este checklist semana a semana e você terá o Extrata Academy rodando em produção em 12 semanas.
+
+**Boa sorte! 🚀**

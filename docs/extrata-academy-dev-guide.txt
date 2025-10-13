@@ -1,0 +1,687 @@
+# 💻 EXTRATA ACADEMY - Development Guide
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+```bash
+# Required
+- Node.js 20.x LTS
+- npm 10.x
+- Docker & Docker Compose
+- Git
+- PostgreSQL 17 (via Docker)
+
+# Optional (for production)
+- AWS CLI
+- Kubernetes CLI (kubectl)
+```
+
+### Initial Setup
+
+```bash
+# 1. Clone repository
+git clone https://github.com/your-org/extrata-academy.git
+cd extrata-academy
+
+# 2. Start infrastructure
+docker-compose up -d
+
+# 3. Setup backend
+cd backend
+cp .env.example .env
+npm install
+npm run migration:run
+npm run seed
+npm run start:dev
+
+# 4. Setup frontend (new terminal)
+cd frontend
+cp .env.local.example .env.local
+npm install
+npm run dev
+
+# 5. Access
+# Frontend: http://localhost:3000
+# Backend API: http://localhost:4000
+# Swagger: http://localhost:4000/api/docs
+# Keycloak: http://localhost:8080
+```
+
+---
+
+## 📁 Project Structure Deep Dive
+
+### Backend Structure
+
+```
+backend/
+├── src/
+│   ├── main.ts                    # Entry point
+│   ├── app.module.ts              # Root module
+│   │
+│   ├── config/                    # Configuration
+│   │   ├── database.config.ts
+│   │   ├── auth.config.ts
+│   │   ├── storage.config.ts
+│   │   └── app.config.ts
+│   │
+│   ├── common/                    # Shared utilities
+│   │   ├── decorators/
+│   │   │   ├── current-user.decorator.ts
+│   │   │   ├── roles.decorator.ts
+│   │   │   └── api-paginated-response.decorator.ts
+│   │   ├── filters/
+│   │   │   ├── http-exception.filter.ts
+│   │   │   └── all-exceptions.filter.ts
+│   │   ├── guards/
+│   │   │   ├── jwt-auth.guard.ts
+│   │   │   └── roles.guard.ts
+│   │   ├── interceptors/
+│   │   │   ├── logging.interceptor.ts
+│   │   │   └── transform.interceptor.ts
+│   │   ├── pipes/
+│   │   │   └── validation.pipe.ts
+│   │   └── interfaces/
+│   │       └── paginated-result.interface.ts
+│   │
+│   ├── database/                  # Database
+│   │   ├── database.module.ts
+│   │   ├── migrations/
+│   │   └── seeds/
+│   │
+│   ├── auth/                      # Authentication
+│   │   ├── auth.module.ts
+│   │   ├── auth.controller.ts
+│   │   ├── auth.service.ts
+│   │   ├── strategies/
+│   │   │   └── jwt.strategy.ts
+│   │   └── dto/
+│   │       ├── login.dto.ts
+│   │       └── auth-response.dto.ts
+│   │
+│   ├── users/                     # Users module
+│   │   ├── users.module.ts
+│   │   ├── users.controller.ts
+│   │   ├── users.service.ts
+│   │   ├── users.repository.ts
+│   │   ├── entities/
+│   │   │   └── user.entity.ts
+│   │   └── dto/
+│   │       ├── create-user.dto.ts
+│   │       ├── update-user.dto.ts
+│   │       └── user-response.dto.ts
+│   │
+│   ├── courses/                   # Courses module
+│   │   ├── courses.module.ts
+│   │   ├── courses.controller.ts
+│   │   ├── courses.service.ts
+│   │   ├── courses.repository.ts
+│   │   ├── entities/
+│   │   │   ├── course.entity.ts
+│   │   │   ├── module.entity.ts
+│   │   │   └── lesson.entity.ts
+│   │   └── dto/
+│   │       ├── create-course.dto.ts
+│   │       ├── update-course.dto.ts
+│   │       ├── course-filters.dto.ts
+│   │       └── course-response.dto.ts
+│   │
+│   ├── enrollments/               # Enrollments module
+│   │   └── ... (similar structure)
+│   │
+│   ├── progress/                  # Progress tracking
+│   │   └── ...
+│   │
+│   ├── quizzes/                   # Quizzes & assessments
+│   │   └── ...
+│   │
+│   ├── certificates/              # Certificate generation
+│   │   └── ...
+│   │
+│   ├── gamification/              # XP, badges, achievements
+│   │   ├── gamification.module.ts
+│   │   ├── xp.service.ts
+│   │   ├── achievements.service.ts
+│   │   ├── leaderboard.service.ts
+│   │   └── ...
+│   │
+│   ├── analytics/                 # Analytics & reporting
+│   │   └── ...
+│   │
+│   └── integration/               # External integrations
+│       ├── keycloak/
+│       ├── storage/
+│       └── notifications/
+│
+├── test/                          # E2E tests
+│   ├── app.e2e-spec.ts
+│   └── ...
+│
+├── .env.example
+├── .eslintrc.js
+├── .prettierrc
+├── docker-compose.yml
+├── Dockerfile
+├── nest-cli.json
+├── package.json
+├── tsconfig.json
+└── tsconfig.build.json
+```
+
+### Frontend Structure
+
+```
+frontend/
+├── src/
+│   ├── app/                       # Next.js App Router
+│   │   ├── layout.tsx             # Root layout
+│   │   ├── page.tsx               # Home page
+│   │   ├── globals.css            # Global styles
+│   │   │
+│   │   ├── (auth)/                # Auth group (no nav)
+│   │   │   ├── login/
+│   │   │   │   └── page.tsx
+│   │   │   └── callback/
+│   │   │       └── page.tsx
+│   │   │
+│   │   └── (platform)/            # Platform group (with nav)
+│   │       ├── layout.tsx
+│   │       ├── dashboard/
+│   │       │   └── page.tsx
+│   │       ├── courses/
+│   │       │   ├── page.tsx
+│   │       │   └── [courseId]/
+│   │       │       ├── page.tsx
+│   │       │       └── learn/
+│   │       │           └── page.tsx
+│   │       └── ...
+│   │
+│   ├── components/                # React components
+│   │   ├── ui/                    # Base UI (shadcn/ui)
+│   │   │   ├── button.tsx
+│   │   │   ├── card.tsx
+│   │   │   ├── input.tsx
+│   │   │   └── ...
+│   │   │
+│   │   ├── academy/               # Feature components
+│   │   │   ├── CourseCard.tsx
+│   │   │   ├── VideoPlayer.tsx
+│   │   │   ├── QuizRenderer.tsx
+│   │   │   ├── ProgressBar.tsx
+│   │   │   └── ...
+│   │   │
+│   │   └── shared/                # Shared components
+│   │       ├── Header.tsx
+│   │       ├── Sidebar.tsx
+│   │       ├── Footer.tsx
+│   │       └── ...
+│   │
+│   ├── lib/                       # Utilities
+│   │   ├── api/                   # API clients
+│   │   │   ├── client.ts
+│   │   │   ├── courses.ts
+│   │   │   ├── auth.ts
+│   │   │   └── ...
+│   │   │
+│   │   ├── hooks/                 # Custom hooks
+│   │   │   ├── useAuth.ts
+│   │   │   ├── useCourse.ts
+│   │   │   └── ...
+│   │   │
+│   │   ├── stores/                # State management
+│   │   │   ├── useAuthStore.ts
+│   │   │   └── useUIStore.ts
+│   │   │
+│   │   └── utils/                 # Utilities
+│   │       ├── cn.ts
+│   │       ├── format.ts
+│   │       └── ...
+│   │
+│   ├── types/                     # TypeScript types
+│   │   ├── api.types.ts
+│   │   ├── course.types.ts
+│   │   └── ...
+│   │
+│   └── styles/                    # Additional styles
+│       └── custom.css
+│
+├── public/                        # Static assets
+│   ├── images/
+│   ├── icons/
+│   └── ...
+│
+├── .env.local.example
+├── .eslintrc.json
+├── next.config.js
+├── package.json
+├── postcss.config.js
+├── tailwind.config.ts
+└── tsconfig.json
+```
+
+---
+
+## 🔨 Development Workflow
+
+### 1. Creating a New Feature
+
+```bash
+# 1. Create feature branch
+git checkout -b feature/quiz-system
+
+# 2. Backend: Generate module
+cd backend
+nest generate module quizzes
+nest generate controller quizzes
+nest generate service quizzes
+
+# 3. Create entity
+# src/quizzes/entities/quiz.entity.ts
+
+# 4. Create DTOs
+# src/quizzes/dto/create-quiz.dto.ts
+# src/quizzes/dto/quiz-response.dto.ts
+
+# 5. Implement service logic
+
+# 6. Write tests
+npm run test quizzes
+
+# 7. Frontend: Create components
+cd frontend/src/components/academy
+# Create QuizRenderer.tsx
+
+# 8. Create API client
+# src/lib/api/quizzes.ts
+
+# 9. Create page
+# src/app/(platform)/quizzes/page.tsx
+
+# 10. Test locally
+npm run dev
+
+# 11. Commit and push
+git add .
+git commit -m "feat: add quiz system"
+git push origin feature/quiz-system
+
+# 12. Create Pull Request
+```
+
+### 2. Running Tests
+
+```bash
+# Backend
+cd backend
+
+# Unit tests
+npm run test
+
+# Watch mode
+npm run test:watch
+
+# Coverage
+npm run test:cov
+
+# E2E tests
+npm run test:e2e
+
+# Frontend
+cd frontend
+
+# Unit tests
+npm run test
+
+# E2E tests (Playwright)
+npm run test:e2e
+```
+
+### 3. Database Operations
+
+```bash
+# Create new migration
+npm run typeorm migration:generate -- -n AddQuizzesTable
+
+# Run migrations
+npm run migration:run
+
+# Revert last migration
+npm run migration:revert
+
+# Seed database
+npm run seed
+
+# Drop and recreate (DANGEROUS)
+npm run schema:drop
+npm run schema:sync
+npm run seed
+```
+
+---
+
+## 📝 Coding Standards
+
+### TypeScript
+
+```typescript
+// ✅ Good
+interface UserResponse {
+  id: string;
+  email: string;
+  name: string;
+}
+
+async function getUser(id: string): Promise<UserResponse> {
+  const user = await this.usersRepo.findOne({ where: { id } });
+  
+  if (!user) {
+    throw new NotFoundException('User not found');
+  }
+
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+  };
+}
+
+// ❌ Bad
+async function getUser(id) {
+  const user = await this.usersRepo.findOne({ where: { id } });
+  return user; // No validation, no type
+}
+```
+
+### NestJS Controllers
+
+```typescript
+@Controller('courses')
+@ApiTags('Courses')
+@UseGuards(JwtAuthGuard)
+export class CoursesController {
+  constructor(private readonly coursesService: CoursesService) {}
+
+  @Get()
+  @ApiOperation({ summary: 'List all courses' })
+  @ApiQuery({ name: 'category', required: false })
+  @ApiResponse({ status: 200, type: [CourseResponseDto] })
+  async findAll(
+    @Query() filters: CoursesFilterDto,
+  ): Promise<CourseResponseDto[]> {
+    return this.coursesService.findAll(filters);
+  }
+
+  @Post()
+  @Roles('ADMIN', 'INSTRUCTOR')
+  @UseGuards(RolesGuard)
+  @ApiOperation({ summary: 'Create new course' })
+  @ApiBody({ type: CreateCourseDto })
+  @ApiResponse({ status: 201, type: CourseResponseDto })
+  async create(
+    @Body() dto: CreateCourseDto,
+    @CurrentUser() user: User,
+  ): Promise<CourseResponseDto> {
+    return this.coursesService.create(dto, user);
+  }
+}
+```
+
+### React Components
+
+```typescript
+// ✅ Good: Typed, documented, separated concerns
+interface CourseCardProps {
+  course: Course;
+  onEnroll: (courseId: string) => void;
+  className?: string;
+}
+
+export function CourseCard({ course, onEnroll, className }: CourseCardProps) {
+  const handleClick = () => {
+    onEnroll(course.id);
+  };
+
+  return (
+    <Card className={cn('hover:shadow-lg transition', className)}>
+      <CardHeader>
+        <CardTitle>{course.title}</CardTitle>
+        <CardDescription>{course.description}</CardDescription>
+      </CardHeader>
+      <CardFooter>
+        <Button onClick={handleClick}>Iniciar Curso</Button>
+      </CardFooter>
+    </Card>
+  );
+}
+
+// ❌ Bad: No types, inline styles, mixed concerns
+export function CourseCard({ course, onEnroll }) {
+  return (
+    <div style={{ border: '1px solid black' }} onClick={() => onEnroll(course.id)}>
+      <h3>{course.title}</h3>
+      <p>{course.description}</p>
+      <button>Iniciar</button>
+    </div>
+  );
+}
+```
+
+### API Clients
+
+```typescript
+// lib/api/courses.ts
+import { apiClient } from './client';
+import type { Course, CourseWithProgress } from '@/types';
+
+export const coursesApi = {
+  getAll: async (filters?: CoursesFilter): Promise<Course[]> => {
+    const { data } = await apiClient.get('/courses', { params: filters });
+    return data;
+  },
+
+  getById: async (id: string): Promise<Course> => {
+    const { data } = await apiClient.get(`/courses/${id}`);
+    return data;
+  },
+
+  getWithProgress: async (id: string): Promise<CourseWithProgress> => {
+    const { data } = await apiClient.get(`/courses/${id}/with-progress`);
+    return data;
+  },
+
+  create: async (dto: CreateCourseDto): Promise<Course> => {
+    const { data } = await apiClient.post('/courses', dto);
+    return data;
+  },
+};
+
+// Usage in component
+import { useQuery } from '@tanstack/react-query';
+import { coursesApi } from '@/lib/api/courses';
+
+export function CoursesPage() {
+  const { data: courses, isLoading } = useQuery({
+    queryKey: ['courses'],
+    queryFn: () => coursesApi.getAll(),
+  });
+
+  if (isLoading) return <Skeleton />;
+
+  return <CourseList courses={courses} />;
+}
+```
+
+---
+
+## 🐛 Debugging
+
+### Backend (NestJS)
+
+```typescript
+// Add debugger
+import { Logger } from '@nestjs/common';
+
+export class CoursesService {
+  private readonly logger = new Logger(CoursesService.name);
+
+  async findAll(filters: CoursesFilterDto) {
+    this.logger.debug(`Finding courses with filters: ${JSON.stringify(filters)}`);
+    
+    try {
+      const courses = await this.repository.findAll(filters);
+      this.logger.log(`Found ${courses.length} courses`);
+      return courses;
+    } catch (error) {
+      this.logger.error(`Error finding courses: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+}
+```
+
+### Frontend (React)
+
+```typescript
+// React DevTools + Console
+useEffect(() => {
+  console.log('Course changed:', course);
+}, [course]);
+
+// React Query DevTools
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+
+export default function RootLayout({ children }) {
+  return (
+    <QueryClientProvider client={queryClient}>
+      {children}
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
+  );
+}
+```
+
+### VS Code Launch Config
+
+```json
+// .vscode/launch.json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "attach",
+      "name": "Debug NestJS",
+      "port": 9229,
+      "restart": true,
+      "stopOnEntry": false,
+      "protocol": "inspector"
+    }
+  ]
+}
+```
+
+---
+
+## 📚 Useful Commands
+
+### Backend
+
+```bash
+# Development
+npm run start:dev        # Start with watch mode
+npm run start:debug      # Start with debugger
+
+# Build
+npm run build            # Production build
+npm run start:prod       # Run production build
+
+# Tests
+npm run test             # Unit tests
+npm run test:watch       # Watch mode
+npm run test:cov         # With coverage
+npm run test:e2e         # E2E tests
+
+# Lint & Format
+npm run lint             # ESLint
+npm run format           # Prettier
+
+# Database
+npm run migration:generate -- -n MigrationName
+npm run migration:run
+npm run migration:revert
+npm run seed
+```
+
+### Frontend
+
+```bash
+# Development
+npm run dev              # Start dev server
+
+# Build
+npm run build            # Production build
+npm run start            # Run production build
+
+# Tests
+npm run test             # Unit tests
+npm run test:e2e         # E2E tests with Playwright
+
+# Lint
+npm run lint             # Next.js lint
+```
+
+---
+
+## 🔍 Common Issues & Solutions
+
+### Issue: "Port already in use"
+
+```bash
+# Find process
+lsof -i :4000
+lsof -i :3000
+
+# Kill process
+kill -9 <PID>
+```
+
+### Issue: "Cannot connect to database"
+
+```bash
+# Check if PostgreSQL is running
+docker ps | grep postgres
+
+# Restart container
+docker-compose restart postgres
+
+# Check logs
+docker-compose logs postgres
+```
+
+### Issue: "Module not found"
+
+```bash
+# Clear cache
+rm -rf node_modules
+rm package-lock.json
+npm install
+
+# Clear Next.js cache
+rm -rf .next
+npm run dev
+```
+
+---
+
+## 📖 Additional Resources
+
+- [NestJS Documentation](https://docs.nestjs.com/)
+- [Next.js Documentation](https://nextjs.org/docs)
+- [TypeORM Documentation](https://typeorm.io/)
+- [React Query Documentation](https://tanstack.com/query/latest)
+- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
+
+---
+
+**Next document**: [08-TESTING-STRATEGY.md](./08-TESTING-STRATEGY.md)

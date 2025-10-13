@@ -1,0 +1,774 @@
+# 🔌 EXTRATA ACADEMY - API Specification
+
+## 📋 Overview
+
+**Base URL**: `http://localhost:4000/api` (development)  
+**Production URL**: `https://api.academy.extrata.gov.br/api`  
+**API Version**: v1  
+**Authentication**: JWT Bearer Token (OAuth2/OIDC via Keycloak)  
+**Content-Type**: `application/json`
+
+---
+
+## 🔐 Authentication
+
+### POST /auth/login
+**Description**: Redirect to Keycloak for authentication
+
+**Request**:
+```http
+POST /api/auth/login
+Content-Type: application/json
+```
+
+**Response**:
+```json
+{
+  "redirect_url": "https://keycloak.example.com/auth/realms/extrata/protocol/openid-connect/auth?..."
+}
+```
+
+### GET /auth/callback
+**Description**: OAuth callback endpoint
+
+**Query Parameters**:
+- `code` (string, required): Authorization code from Keycloak
+
+**Response**:
+```json
+{
+  "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer",
+  "expires_in": 900,
+  "user": {
+    "id": "uuid",
+    "email": "user@example.com",
+    "name": "User Name",
+    "role": "STUDENT"
+  }
+}
+```
+
+### POST /auth/refresh
+**Description**: Refresh access token
+
+**Request**:
+```json
+{
+  "refresh_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+**Response**: Same as `/auth/callback`
+
+### POST /auth/logout
+**Description**: Logout and invalidate tokens
+
+**Headers**:
+```
+Authorization: Bearer {access_token}
+```
+
+**Response**:
+```json
+{
+  "message": "Logged out successfully"
+}
+```
+
+---
+
+## 👤 Users
+
+### GET /users/me
+**Description**: Get current user profile
+
+**Headers**:
+```
+Authorization: Bearer {access_token}
+```
+
+**Response**:
+```json
+{
+  "id": "uuid",
+  "email": "user@example.com",
+  "name": "User Name",
+  "avatar_url": "https://...",
+  "role": "STUDENT",
+  "municipality_id": "uuid",
+  "created_at": "2025-01-15T10:00:00Z",
+  "xp": {
+    "total_xp": 5000,
+    "level": 5,
+    "current_level_xp": 500,
+    "next_level_xp": 1000
+  }
+}
+```
+
+### PATCH /users/me
+**Description**: Update current user profile
+
+**Request**:
+```json
+{
+  "name": "New Name",
+  "avatar_url": "https://..."
+}
+```
+
+**Response**: Updated user object
+
+---
+
+## 📚 Courses
+
+### GET /courses
+**Description**: List all published courses
+
+**Query Parameters**:
+- `category` (string, optional): Filter by category
+- `difficulty_level` (string, optional): iniciante | intermediario | avancado
+- `search` (string, optional): Search in title/description
+- `page` (number, optional, default: 1)
+- `limit` (number, optional, default: 20, max: 100)
+- `sort` (string, optional): popularity | recent | title
+
+**Response**:
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "title": "Introdução ao Extrata",
+      "slug": "introducao-ao-extrata",
+      "description": "Aprenda o básico...",
+      "category": "Fundamentos",
+      "difficulty_level": "iniciante",
+      "estimated_hours": 2.5,
+      "thumbnail_url": "https://...",
+      "status": "published",
+      "created_at": "2025-01-01T00:00:00Z",
+      "stats": {
+        "total_enrollments": 150,
+        "avg_rating": 4.5,
+        "completion_rate": 75
+      }
+    }
+  ],
+  "meta": {
+    "total": 50,
+    "page": 1,
+    "limit": 20,
+    "pages": 3
+  }
+}
+```
+
+### GET /courses/:id
+**Description**: Get course details
+
+**Response**:
+```json
+{
+  "id": "uuid",
+  "title": "Introdução ao Extrata",
+  "slug": "introducao-ao-extrata",
+  "description": "Descrição completa...",
+  "category": "Fundamentos",
+  "difficulty_level": "iniciante",
+  "estimated_hours": 2.5,
+  "thumbnail_url": "https://...",
+  "cover_image_url": "https://...",
+  "trailer_video_url": "https://...",
+  "status": "published",
+  "modules": [
+    {
+      "id": "uuid",
+      "title": "Módulo 1: Primeiros Passos",
+      "description": "Neste módulo...",
+      "order_index": 0,
+      "duration_minutes": 45,
+      "lessons_count": 5
+    }
+  ],
+  "created_at": "2025-01-01T00:00:00Z",
+  "stats": {
+    "total_enrollments": 150,
+    "avg_rating": 4.5,
+    "completion_rate": 75
+  }
+}
+```
+
+### GET /courses/:id/with-progress
+**Description**: Get course with user's progress
+
+**Headers**: Authorization required
+
+**Response**:
+```json
+{
+  "...": "course data",
+  "enrollment": {
+    "id": "uuid",
+    "enrolled_at": "2025-01-15T10:00:00Z",
+    "started_at": "2025-01-15T10:05:00Z",
+    "progress_percentage": 45.5,
+    "last_accessed_at": "2025-01-20T14:30:00Z",
+    "last_lesson_id": "uuid"
+  },
+  "modules": [
+    {
+      "id": "uuid",
+      "title": "Módulo 1",
+      "lessons": [
+        {
+          "id": "uuid",
+          "title": "Lição 1.1",
+          "content_type": "video",
+          "duration_minutes": 10,
+          "is_mandatory": true,
+          "is_preview": false,
+          "progress": {
+            "status": "completed",
+            "completed_at": "2025-01-15T10:15:00Z",
+            "time_spent_seconds": 580
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+### POST /courses
+**Description**: Create new course (ADMIN/INSTRUCTOR only)
+
+**Request**:
+```json
+{
+  "title": "Novo Curso",
+  "description": "Descrição do curso",
+  "category": "Avançado",
+  "difficulty_level": "intermediario",
+  "estimated_hours": 5
+}
+```
+
+**Response**: Created course object (status 201)
+
+### PATCH /courses/:id
+**Description**: Update course (ADMIN/INSTRUCTOR only)
+
+**Request**:
+```json
+{
+  "title": "Título Atualizado",
+  "description": "Nova descrição"
+}
+```
+
+**Response**: Updated course object
+
+### POST /courses/:id/publish
+**Description**: Publish course (ADMIN only)
+
+**Response**:
+```json
+{
+  "id": "uuid",
+  "status": "published",
+  "published_at": "2025-01-20T10:00:00Z"
+}
+```
+
+---
+
+## 📖 Lessons
+
+### GET /courses/:courseId/modules/:moduleId/lessons
+**Description**: List lessons in a module
+
+**Response**:
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "title": "Lição 1.1: Introdução",
+      "content_type": "video",
+      "duration_minutes": 10,
+      "order_index": 0,
+      "is_mandatory": true,
+      "is_preview": false
+    }
+  ]
+}
+```
+
+### GET /lessons/:id
+**Description**: Get lesson details with content
+
+**Response**:
+```json
+{
+  "id": "uuid",
+  "title": "Lição 1.1: Introdução",
+  "description": "Nesta lição...",
+  "content_type": "video",
+  "content": {
+    "video_url": "https://cdn.../video.m3u8",
+    "duration": 600,
+    "subtitles": [
+      {
+        "lang": "pt-BR",
+        "url": "https://..."
+      }
+    ],
+    "thumbnail": "https://..."
+  },
+  "duration_minutes": 10,
+  "is_mandatory": true,
+  "resources": [
+    {
+      "title": "Slides da Aula",
+      "url": "https://...",
+      "type": "pdf"
+    }
+  ]
+}
+```
+
+---
+
+## 📊 Enrollments & Progress
+
+### POST /enrollments
+**Description**: Enroll in a course
+
+**Request**:
+```json
+{
+  "course_id": "uuid"
+}
+```
+
+**Response**:
+```json
+{
+  "id": "uuid",
+  "user_id": "uuid",
+  "course_id": "uuid",
+  "enrolled_at": "2025-01-20T10:00:00Z",
+  "progress_percentage": 0
+}
+```
+
+### GET /enrollments/my-courses
+**Description**: Get user's enrolled courses
+
+**Query Parameters**:
+- `status` (string, optional): in_progress | completed
+- `page`, `limit`
+
+**Response**:
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "course": {
+        "id": "uuid",
+        "title": "Introdução ao Extrata",
+        "thumbnail_url": "https://..."
+      },
+      "enrolled_at": "2025-01-15T10:00:00Z",
+      "progress_percentage": 45.5,
+      "last_accessed_at": "2025-01-20T14:30:00Z",
+      "completed_at": null
+    }
+  ],
+  "meta": {
+    "total": 5,
+    "in_progress": 3,
+    "completed": 2
+  }
+}
+```
+
+### POST /progress/lessons/:lessonId/start
+**Description**: Mark lesson as started
+
+**Response**:
+```json
+{
+  "id": "uuid",
+  "lesson_id": "uuid",
+  "status": "in_progress",
+  "started_at": "2025-01-20T10:00:00Z"
+}
+```
+
+### POST /progress/lessons/:lessonId/complete
+**Description**: Mark lesson as completed
+
+**Request**:
+```json
+{
+  "time_spent_seconds": 580
+}
+```
+
+**Response**:
+```json
+{
+  "id": "uuid",
+  "lesson_id": "uuid",
+  "status": "completed",
+  "completed_at": "2025-01-20T10:10:00Z",
+  "xp_awarded": 50,
+  "course_progress": 15.5
+}
+```
+
+### PATCH /progress/lessons/:lessonId
+**Description**: Update lesson progress (for video position)
+
+**Request**:
+```json
+{
+  "last_position_seconds": 245,
+  "time_spent_seconds": 30
+}
+```
+
+**Response**:
+```json
+{
+  "id": "uuid",
+  "last_position_seconds": 245,
+  "time_spent_seconds": 610
+}
+```
+
+---
+
+## 🎓 Quizzes
+
+### GET /quizzes/:id
+**Description**: Get quiz details
+
+**Response**:
+```json
+{
+  "id": "uuid",
+  "lesson_id": "uuid",
+  "title": "Quiz: Avaliação do Módulo 1",
+  "description": "Teste seus conhecimentos...",
+  "passing_score": 70,
+  "max_attempts": 3,
+  "time_limit_minutes": 15,
+  "questions": [
+    {
+      "id": "uuid",
+      "question_text": "Qual é a função principal do Extrata?",
+      "question_type": "multiple_choice",
+      "options": [
+        {"id": "a", "text": "Opção A"},
+        {"id": "b", "text": "Opção B"},
+        {"id": "c", "text": "Opção C"},
+        {"id": "d", "text": "Opção D"}
+      ],
+      "points": 1
+    }
+  ]
+}
+```
+
+### POST /quizzes/:id/attempts
+**Description**: Start quiz attempt
+
+**Response**:
+```json
+{
+  "id": "uuid",
+  "quiz_id": "uuid",
+  "started_at": "2025-01-20T10:00:00Z",
+  "attempt_number": 1,
+  "time_limit_minutes": 15,
+  "expires_at": "2025-01-20T10:15:00Z"
+}
+```
+
+### POST /quizzes/:id/attempts/:attemptId/submit
+**Description**: Submit quiz answers
+
+**Request**:
+```json
+{
+  "answers": [
+    {"question_id": "uuid", "answer": "a"},
+    {"question_id": "uuid", "answer": ["b", "c"]}
+  ]
+}
+```
+
+**Response**:
+```json
+{
+  "id": "uuid",
+  "score": 85,
+  "passed": true,
+  "submitted_at": "2025-01-20T10:12:00Z",
+  "time_spent_seconds": 720,
+  "results": [
+    {
+      "question_id": "uuid",
+      "is_correct": true,
+      "correct_answer": "a",
+      "user_answer": "a",
+      "explanation": "Correto! A resposta é..."
+    }
+  ],
+  "xp_awarded": 100
+}
+```
+
+---
+
+## 🏆 Gamification
+
+### GET /gamification/xp
+**Description**: Get user's XP details
+
+**Response**:
+```json
+{
+  "user_id": "uuid",
+  "total_xp": 5000,
+  "level": 5,
+  "current_level_xp": 500,
+  "next_level_xp": 1000,
+  "progress_to_next_level": 50
+}
+```
+
+### GET /gamification/achievements
+**Description**: Get user's achievements
+
+**Response**:
+```json
+{
+  "earned": [
+    {
+      "id": "uuid",
+      "code": "first_course",
+      "name": "Primeira Conquista",
+      "description": "Complete seu primeiro curso",
+      "icon": "🎯",
+      "earned_at": "2025-01-15T12:00:00Z"
+    }
+  ],
+  "available": [
+    {
+      "id": "uuid",
+      "code": "speed_runner",
+      "name": "Velocista",
+      "description": "Complete um curso em menos de 24h",
+      "icon": "⚡",
+      "progress": 65
+    }
+  ]
+}
+```
+
+### GET /gamification/leaderboard
+**Description**: Get leaderboard
+
+**Query Parameters**:
+- `scope` (string, optional): global | municipality
+- `period` (string, optional): all_time | monthly | weekly
+- `limit` (number, optional, default: 100)
+
+**Response**:
+```json
+{
+  "data": [
+    {
+      "rank": 1,
+      "user": {
+        "id": "uuid",
+        "name": "User Name",
+        "avatar_url": "https://..."
+      },
+      "total_xp": 15000,
+      "level": 10,
+      "badges_count": 12
+    }
+  ],
+  "current_user": {
+    "rank": 45,
+    "total_xp": 5000,
+    "level": 5
+  }
+}
+```
+
+---
+
+## 📜 Certificates
+
+### GET /certificates
+**Description**: Get user's certificates
+
+**Response**:
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "course": {
+        "id": "uuid",
+        "title": "Introdução ao Extrata"
+      },
+      "certificate_code": "EXT-1704556800-A1B2C3D4E",
+      "issued_at": "2025-01-20T10:00:00Z",
+      "pdf_url": "https://cdn.../certificates/uuid.pdf",
+      "validation_url": "https://academy.extrata.gov.br/validate/EXT-1704556800-A1B2C3D4E"
+    }
+  ]
+}
+```
+
+### GET /certificates/:code/validate
+**Description**: Validate certificate (public endpoint)
+
+**Response**:
+```json
+{
+  "valid": true,
+  "certificate": {
+    "code": "EXT-1704556800-A1B2C3D4E",
+    "user_name": "User Name",
+    "course_name": "Introdução ao Extrata",
+    "issued_at": "2025-01-20T10:00:00Z",
+    "workload_hours": 2.5
+  }
+}
+```
+
+---
+
+## 📈 Analytics (ADMIN only)
+
+### GET /analytics/dashboard
+**Description**: Get admin dashboard metrics
+
+**Query Parameters**:
+- `start_date` (date, optional)
+- `end_date` (date, optional)
+
+**Response**:
+```json
+{
+  "overview": {
+    "total_users": 1247,
+    "active_users_last_month": 892,
+    "total_enrollments": 3456,
+    "total_completions": 1823,
+    "avg_completion_rate": 52.7
+  },
+  "popular_courses": [
+    {
+      "course_id": "uuid",
+      "title": "Introdução ao Extrata",
+      "enrollments": 450,
+      "completions": 320,
+      "completion_rate": 71.1
+    }
+  ],
+  "engagement": {
+    "daily_active_users": [
+      {"date": "2025-01-15", "count": 123},
+      {"date": "2025-01-16", "count": 145}
+    ]
+  }
+}
+```
+
+---
+
+## ⚠️ Error Responses
+
+### Standard Error Format
+
+```json
+{
+  "statusCode": 400,
+  "message": "Validation failed",
+  "error": "Bad Request",
+  "details": [
+    {
+      "field": "title",
+      "message": "title should not be empty"
+    }
+  ]
+}
+```
+
+### Common Status Codes
+
+- `200` - Success
+- `201` - Created
+- `204` - No Content
+- `400` - Bad Request (validation error)
+- `401` - Unauthorized (missing/invalid token)
+- `403` - Forbidden (insufficient permissions)
+- `404` - Not Found
+- `409` - Conflict (duplicate resource)
+- `422` - Unprocessable Entity (business logic error)
+- `429` - Too Many Requests (rate limit)
+- `500` - Internal Server Error
+
+---
+
+## 🔒 Rate Limiting
+
+- **Authenticated requests**: 1000 requests per 15 minutes
+- **Unauthenticated requests**: 100 requests per 15 minutes
+- **Headers**:
+  ```
+  X-RateLimit-Limit: 1000
+  X-RateLimit-Remaining: 995
+  X-RateLimit-Reset: 1704556800
+  ```
+
+---
+
+## 📝 Pagination
+
+All list endpoints support pagination:
+
+**Query Parameters**:
+- `page` (number, default: 1)
+- `limit` (number, default: 20, max: 100)
+
+**Response**:
+```json
+{
+  "data": [...],
+  "meta": {
+    "total": 150,
+    "page": 1,
+    "limit": 20,
+    "pages": 8
+  }
+}
+```
+
+---
+
+**Next document**: [06-FRONTEND-DESIGN.md](./06-FRONTEND-DESIGN.md)

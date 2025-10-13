@@ -1,0 +1,211 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:17-alpine
+    container_name: extrata-academy-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-academy}
+      POSTGRES_USER: ${DB_USER:-academy}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-academy123}
+      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=C"
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-academy}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - academy-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: extrata-academy-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis123}
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - academy-network
+
+  # Keycloak is external - using existing Extrata Keycloak instance
+
+  # Backend API (NestJS)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: ${BUILD_TARGET:-development}
+    container_name: extrata-academy-backend
+    restart: unless-stopped
+    environment:
+      # Node
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 4000
+      
+      # Database
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-academy}
+      DB_USER: ${DB_USER:-academy}
+      DB_PASSWORD: ${DB_PASSWORD:-academy123}
+      DB_SYNC: ${DB_SYNC:-false}
+      DB_LOGGING: ${DB_LOGGING:-true}
+      
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+      
+      # Keycloak (External Extrata instance)
+      KEYCLOAK_URL: ${KEYCLOAK_URL:-https://keycloak-hlg.extrata.com.br}
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-extrata}
+      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-academy-backend}
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+      
+      # JWT
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-15m}
+      JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-7d}
+      
+      # AWS (for S3 storage)
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      S3_BUCKET: ${S3_BUCKET:-academy-assets-dev}
+      
+      # Storage (local fallback)
+      STORAGE_TYPE: ${STORAGE_TYPE:-local}
+      STORAGE_PATH: ${STORAGE_PATH:-/app/storage}
+      
+      # Email
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_FROM: ${SMTP_FROM:-noreply@academy.extrata.gov.br}
+      
+      # URLs
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      
+      # Monitoring
+      SENTRY_DSN: ${SENTRY_DSN}
+      
+    ports:
+      - "${BACKEND_PORT:-4000}:4000"
+      - "${BACKEND_DEBUG_PORT:-9229}:9229" # Debugger
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - backend_storage:/app/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - academy-network
+    command: ${BACKEND_COMMAND:-npm run start:dev}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:4000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend (Next.js)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: ${BUILD_TARGET:-development}
+    container_name: extrata-academy-frontend
+    restart: unless-stopped
+    environment:
+      # Node
+      NODE_ENV: ${NODE_ENV:-development}
+      
+      # Next.js
+      NEXT_TELEMETRY_DISABLED: 1
+      
+      # API URLs (public - accessible from browser)
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000/api}
+      NEXT_PUBLIC_KEYCLOAK_URL: ${NEXT_PUBLIC_KEYCLOAK_URL:-https://keycloak-hlg.extrata.com.br}
+      NEXT_PUBLIC_KEYCLOAK_REALM: ${KEYCLOAK_REALM:-extrata}
+      NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-academy-frontend}
+      
+      # Features flags
+      NEXT_PUBLIC_ENABLE_ANALYTICS: ${ENABLE_ANALYTICS:-false}
+      NEXT_PUBLIC_ENABLE_COMMUNITY: ${ENABLE_COMMUNITY:-false}
+      
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - academy-network
+    command: ${FRONTEND_COMMAND:-npm run dev}
+
+  # Adminer (Database GUI - Optional, Development only)
+  adminer:
+    image: adminer:latest
+    container_name: extrata-academy-adminer
+    restart: unless-stopped
+    ports:
+      - "${ADMINER_PORT:-8081}:8080"
+    depends_on:
+      - postgres
+    networks:
+      - academy-network
+    profiles:
+      - tools
+
+  # RedisInsight (Redis GUI - Optional, Development only)
+  redis-insight:
+    image: redislabs/redisinsight:latest
+    container_name: extrata-academy-redis-insight
+    restart: unless-stopped
+    ports:
+      - "${REDIS_INSIGHT_PORT:-8082}:8001"
+    volumes:
+      - redis_insight_data:/db
+    depends_on:
+      - redis
+    networks:
+      - academy-network
+    profiles:
+      - tools
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  backend_storage:
+    driver: local
+  redis_insight_data:
+    driver: local
+
+networks:
+  academy-network:
+    driver: bridge
+    name: academy-network

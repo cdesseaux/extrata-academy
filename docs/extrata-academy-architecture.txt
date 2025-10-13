@@ -1,0 +1,729 @@
+# 🏗️ EXTRATA ACADEMY - Arquitetura Técnica
+
+## 📐 Visão Geral da Arquitetura
+
+### Arquitetura de Alto Nível
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                        INTERNET                               │
+└────────────────────────┬─────────────────────────────────────┘
+                         │
+                    ┌────▼────┐
+                    │   CDN   │ (CloudFlare / CloudFront)
+                    │ (Assets)│
+                    └────┬────┘
+                         │
+                    ┌────▼────┐
+                    │  NGINX  │ (Reverse Proxy + Load Balancer)
+                    │   SSL   │
+                    └────┬────┘
+                         │
+        ┌────────────────┴────────────────┐
+        │                                  │
+   ┌────▼─────┐                     ┌────▼─────┐
+   │ Frontend │                     │ Backend  │
+   │ Next.js  │                     │ NestJS   │
+   │  (SSR)   │◄───────────────────►│   API    │
+   └──────────┘                     └────┬─────┘
+                                         │
+                    ┌────────────────────┼────────────────┐
+                    │                    │                │
+               ┌────▼────┐          ┌───▼───┐       ┌───▼───┐
+               │   DB    │          │ Redis │       │  S3   │
+               │  Postgres│          │ Cache │       │Videos │
+               └─────────┘          └───────┘       └───────┘
+```
+
+## 🔧 Stack Tecnológico
+
+### Backend
+- **Framework**: NestJS 10.x (Node.js 20.x LTS)
+- **Language**: TypeScript 5.x
+- **ORM**: Prisma 5.x (ou TypeORM 0.3.x)
+- **Database**: PostgreSQL 17.x
+- **Cache**: Redis 7.x
+- **Auth**: Keycloak (OAuth2/OIDC)
+- **Validation**: class-validator + class-transformer
+- **Documentation**: Swagger/OpenAPI 3.0
+
+### Frontend
+- **Framework**: Next.js 14.x (App Router)
+- **Language**: TypeScript 5.x
+- **UI Library**: React 18.x
+- **Styling**: Tailwind CSS 3.x
+- **Components**: shadcn/ui (Radix UI)
+- **Forms**: React Hook Form + Zod
+- **State**: Zustand (ou React Context)
+- **HTTP Client**: TanStack Query (React Query)
+- **Video Player**: Video.js ou Plyr.io
+
+### Infrastructure
+- **Containerization**: Docker + Docker Compose
+- **Orchestration**: Kubernetes (futuro)
+- **CI/CD**: GitHub Actions
+- **Hosting**: AWS / DigitalOcean
+- **CDN**: CloudFlare / CloudFront
+- **Storage**: AWS S3 / Spaces
+- **Monitoring**: Prometheus + Grafana
+- **Logging**: Winston + ELK Stack
+- **Error Tracking**: Sentry
+
+## 🗄️ Arquitetura de Dados
+
+### Database Schema (High-Level)
+
+```
+┌─────────────────┐
+│     users       │
+├─────────────────┤
+│ id (UUID)       │
+│ keycloak_id     │
+│ email           │
+│ name            │
+│ role            │
+│ municipality_id │
+└────────┬────────┘
+         │
+         │ 1:N
+         │
+┌────────▼────────┐        ┌─────────────────┐
+│  enrollments    │   N:1  │    courses      │
+├─────────────────┤◄───────┤─────────────────┤
+│ id              │        │ id              │
+│ user_id         │        │ title           │
+│ course_id       │        │ description     │
+│ progress_%      │        │ category        │
+│ started_at      │        │ status          │
+│ completed_at    │        │ thumbnail_url   │
+└────────┬────────┘        └────────┬────────┘
+         │                          │
+         │                          │ 1:N
+         │                          │
+         │                 ┌────────▼────────┐
+         │                 │    modules      │
+         │                 ├─────────────────┤
+         │                 │ id              │
+         │                 │ course_id       │
+         │                 │ title           │
+         │                 │ order_index     │
+         │                 └────────┬────────┘
+         │                          │
+         │                          │ 1:N
+         │                          │
+         │                 ┌────────▼────────┐
+         │ 1:N             │    lessons      │
+         │                 ├─────────────────┤
+         │                 │ id              │
+         │                 │ module_id       │
+         │                 │ title           │
+         │                 │ content_type    │
+         │                 │ content (JSONB) │
+         │                 │ order_index     │
+         │                 └────────┬────────┘
+         │                          │
+         │                          │ N:1
+         │                          │
+┌────────▼────────┐        ┌────────▼────────┐
+│lesson_progress  │        │    quizzes      │
+├─────────────────┤        ├─────────────────┤
+│ id              │        │ id              │
+│ enrollment_id   │        │ lesson_id       │
+│ lesson_id       │        │ passing_score   │
+│ status          │        │ max_attempts    │
+│ completed_at    │        └────────┬────────┘
+│ time_spent      │                 │
+└─────────────────┘                 │ 1:N
+                                    │
+                           ┌────────▼────────┐
+                           │   questions     │
+                           ├─────────────────┤
+                           │ id              │
+                           │ quiz_id         │
+                           │ question_text   │
+                           │ type            │
+                           │ options (JSONB) │
+                           │ correct_answer  │
+                           └─────────────────┘
+```
+
+### Data Flow - Curso Completo
+
+```
+1. User Login
+   ┌─────┐      ┌──────────┐      ┌─────────┐
+   │User │─────►│Keycloak  │─────►│Backend  │
+   └─────┘      └──────────┘      └────┬────┘
+                                       │
+                                       ▼
+                                  Create Session
+                                  Return JWT Token
+
+2. Enrollment
+   ┌─────┐      ┌─────────┐      ┌──────────┐
+   │User │─────►│Frontend │─────►│POST /api │
+   └─────┘      └─────────┘      │/enrollments│
+                                 └─────┬──────┘
+                                       │
+                                       ▼
+                                 Check if exists
+                                 Create enrollment
+                                 Return enrollment_id
+
+3. Watch Lesson (Video)
+   ┌─────┐      ┌─────────┐      ┌──────────┐
+   │User │─────►│Video    │─────►│POST /api │
+   │     │      │Player   │      │/progress │
+   └─────┘      └─────────┘      └────┬─────┘
+                                      │
+                 Every 10s            ▼
+                 send progress    Update lesson_progress
+                                 Calculate course progress
+                                 Award XP if completed
+
+4. Complete Course
+   ┌─────┐                       ┌──────────┐
+   │100% │──────────────────────►│Backend   │
+   │done │                       └────┬─────┘
+   └─────┘                            │
+                                      ▼
+                              Generate Certificate
+                              Award XP (500pts)
+                              Send Notification
+                              Return certificate_url
+```
+
+## 🔌 Arquitetura de Backend (NestJS)
+
+### Módulos Principais
+
+```typescript
+// src/app.module.ts
+@Module({
+  imports: [
+    // Core
+    ConfigModule.forRoot({ isGlobal: true }),
+    DatabaseModule,
+    CacheModule,
+    
+    // Auth
+    AuthModule,
+    
+    // Features
+    UsersModule,
+    CoursesModule,
+    ModulesModule,
+    LessonsModule,
+    EnrollmentsModule,
+    ProgressModule,
+    QuizzesModule,
+    CertificatesModule,
+    GamificationModule,
+    AnalyticsModule,
+    
+    // Integration
+    KeycloakModule,
+    StorageModule,
+    NotificationsModule,
+  ],
+})
+export class AppModule {}
+```
+
+### Camadas de Arquitetura
+
+```
+┌─────────────────────────────────────────────┐
+│          Controllers (HTTP Layer)           │
+│  - Validação de inputs                      │
+│  - Mapeamento DTO ←→ Entity                 │
+│  - Documentação Swagger                     │
+└──────────────────┬──────────────────────────┘
+                   │
+┌──────────────────▼──────────────────────────┐
+│          Services (Business Logic)          │
+│  - Regras de negócio                        │
+│  - Orquestração de operações                │
+│  - Transações                               │
+└──────────────────┬──────────────────────────┘
+                   │
+┌──────────────────▼──────────────────────────┐
+│          Repositories (Data Access)         │
+│  - CRUD operations                          │
+│  - Query builders                           │
+│  - Database abstractions                    │
+└──────────────────┬──────────────────────────┘
+                   │
+┌──────────────────▼──────────────────────────┐
+│          Database (PostgreSQL)              │
+└─────────────────────────────────────────────┘
+```
+
+### Exemplo: Courses Module
+
+```typescript
+// courses/courses.module.ts
+@Module({
+  imports: [
+    DatabaseModule,
+    StorageModule,
+    CacheModule,
+  ],
+  controllers: [CoursesController],
+  providers: [
+    CoursesService,
+    CoursesRepository,
+    ModulesService,
+    LessonsService,
+  ],
+  exports: [CoursesService],
+})
+export class CoursesModule {}
+
+// courses/courses.controller.ts
+@Controller('courses')
+@ApiTags('Courses')
+@UseGuards(JwtAuthGuard, RolesGuard)
+export class CoursesController {
+  constructor(private readonly coursesService: CoursesService) {}
+
+  @Get()
+  @ApiOperation({ summary: 'List all courses' })
+  @ApiQuery({ name: 'category', required: false })
+  @ApiResponse({ status: 200, type: [CourseDto] })
+  async findAll(@Query() filters: CoursesFilterDto): Promise<CourseDto[]> {
+    return this.coursesService.findAll(filters);
+  }
+
+  @Post()
+  @Roles('ADMIN', 'INSTRUCTOR')
+  @ApiOperation({ summary: 'Create new course' })
+  @ApiBody({ type: CreateCourseDto })
+  @ApiResponse({ status: 201, type: CourseDto })
+  async create(@Body() dto: CreateCourseDto): Promise<CourseDto> {
+    return this.coursesService.create(dto);
+  }
+
+  @Get(':id/with-progress')
+  @ApiOperation({ summary: 'Get course with user progress' })
+  async getCourseWithProgress(
+    @Param('id') id: string,
+    @CurrentUser() user: User,
+  ): Promise<CourseWithProgressDto> {
+    return this.coursesService.getCourseWithProgress(id, user.id);
+  }
+}
+
+// courses/courses.service.ts
+@Injectable()
+export class CoursesService {
+  constructor(
+    private readonly repository: CoursesRepository,
+    private readonly enrollmentsService: EnrollmentsService,
+    private readonly progressService: ProgressService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+  ) {}
+
+  async findAll(filters: CoursesFilterDto): Promise<Course[]> {
+    const cacheKey = `courses:${JSON.stringify(filters)}`;
+    
+    // Check cache
+    const cached = await this.cacheManager.get<Course[]>(cacheKey);
+    if (cached) return cached;
+
+    // Query database
+    const courses = await this.repository.findAll(filters);
+
+    // Cache for 5 minutes
+    await this.cacheManager.set(cacheKey, courses, 300);
+
+    return courses;
+  }
+
+  async getCourseWithProgress(
+    courseId: string,
+    userId: string,
+  ): Promise<CourseWithProgress> {
+    const course = await this.repository.findById(courseId);
+    const enrollment = await this.enrollmentsService.findOrCreate(
+      userId,
+      courseId,
+    );
+    const progress = await this.progressService.calculate(enrollment.id);
+
+    return {
+      ...course,
+      enrollment,
+      progress,
+    };
+  }
+
+  @Transactional()
+  async create(dto: CreateCourseDto): Promise<Course> {
+    const slug = slugify(dto.title);
+    
+    // Check unique slug
+    const exists = await this.repository.findBySlug(slug);
+    if (exists) {
+      throw new ConflictException('Course with this title already exists');
+    }
+
+    const course = await this.repository.create({
+      ...dto,
+      slug,
+      status: 'draft',
+    });
+
+    // Clear cache
+    await this.cacheManager.del('courses:*');
+
+    return course;
+  }
+}
+```
+
+## 🎨 Arquitetura de Frontend (Next.js)
+
+### App Router Structure
+
+```
+src/app/
+├── layout.tsx                    # Root layout
+├── page.tsx                      # Home page
+├── (auth)/                       # Auth route group (no layout)
+│   ├── login/
+│   │   └── page.tsx
+│   └── register/
+│       └── page.tsx
+│
+└── (platform)/                   # Platform route group (with nav)
+    ├── layout.tsx                # Platform layout (nav, sidebar)
+    │
+    ├── dashboard/
+    │   └── page.tsx              # /dashboard
+    │
+    ├── courses/
+    │   ├── page.tsx              # /courses (list)
+    │   └── [courseId]/
+    │       ├── page.tsx          # /courses/:id (detail)
+    │       └── learn/
+    │           └── page.tsx      # /courses/:id/learn (player)
+    │
+    ├── my-learning/
+    │   └── page.tsx              # /my-learning
+    │
+    ├── certificates/
+    │   └── page.tsx              # /certificates
+    │
+    ├── leaderboard/
+    │   └── page.tsx              # /leaderboard
+    │
+    └── profile/
+        └── page.tsx              # /profile
+```
+
+### State Management
+
+```typescript
+// lib/stores/useAuthStore.ts (Zustand)
+interface AuthState {
+  user: User | null;
+  token: string | null;
+  isAuthenticated: boolean;
+  login: (token: string, user: User) => void;
+  logout: () => void;
+}
+
+export const useAuthStore = create<AuthState>((set) => ({
+  user: null,
+  token: null,
+  isAuthenticated: false,
+  login: (token, user) => set({ token, user, isAuthenticated: true }),
+  logout: () => set({ token: null, user: null, isAuthenticated: false }),
+}));
+
+// Usage
+function ProfilePage() {
+  const { user } = useAuthStore();
+  return <div>Welcome {user?.name}</div>;
+}
+```
+
+### Data Fetching (React Query)
+
+```typescript
+// lib/api/courses.ts
+export const coursesApi = {
+  getAll: (filters?: CoursesFilter) =>
+    api.get<Course[]>('/courses', { params: filters }),
+  
+  getById: (id: string) =>
+    api.get<Course>(`/courses/${id}`),
+  
+  getWithProgress: (id: string) =>
+    api.get<CourseWithProgress>(`/courses/${id}/with-progress`),
+};
+
+// app/(platform)/courses/[courseId]/page.tsx
+'use client';
+
+export default function CoursePage({ params }: { params: { courseId: string } }) {
+  const { data: course, isLoading } = useQuery({
+    queryKey: ['course', params.courseId],
+    queryFn: () => coursesApi.getWithProgress(params.courseId),
+  });
+
+  if (isLoading) return <Skeleton />;
+
+  return (
+    <div>
+      <h1>{course.title}</h1>
+      <ProgressBar progress={course.progress.percentage} />
+      <ModuleList modules={course.modules} />
+    </div>
+  );
+}
+```
+
+## 🔐 Autenticação e Autorização
+
+### Flow de Autenticação (OAuth2/OIDC)
+
+```
+1. User clicks "Login"
+   ┌──────┐
+   │Client│
+   └───┬──┘
+       │ GET /auth/login
+       │
+   ┌───▼──────┐
+   │Backend   │ Redirect to Keycloak
+   │          │─────────────────────────┐
+   └──────────┘                         │
+                                        │
+2. User authenticates                   │
+   ┌──────────────┐                    │
+   │  Keycloak    │◄───────────────────┘
+   │              │
+   │ Login form   │
+   └──────┬───────┘
+          │
+          │ credentials
+          │
+3. Keycloak returns code
+   ┌──────▼───────┐
+   │  Keycloak    │
+   │              │ Redirect to /auth/callback?code=xxx
+   └──────┬───────┘
+          │
+   ┌──────▼───────┐
+   │Backend       │
+   │              │ Exchange code for tokens
+   └──────┬───────┘
+          │
+4. Backend validates and returns JWT
+   ┌──────▼───────┐
+   │Backend       │ Set-Cookie: token=xxx
+   │              │ Redirect to /dashboard
+   └──────┬───────┘
+          │
+   ┌──────▼───────┐
+   │Client        │ Store token, fetch user
+   └──────────────┘
+```
+
+### Guards e Decorators
+
+```typescript
+// common/guards/jwt-auth.guard.ts
+@Injectable()
+export class JwtAuthGuard extends AuthGuard('jwt') {
+  canActivate(context: ExecutionContext) {
+    return super.canActivate(context);
+  }
+
+  handleRequest(err, user, info) {
+    if (err || !user) {
+      throw new UnauthorizedException('Invalid token');
+    }
+    return user;
+  }
+}
+
+// common/guards/roles.guard.ts
+@Injectable()
+export class RolesGuard implements CanActivate {
+  constructor(private reflector: Reflector) {}
+
+  canActivate(context: ExecutionContext): boolean {
+    const requiredRoles = this.reflector.get<string[]>(
+      'roles',
+      context.getHandler(),
+    );
+    
+    if (!requiredRoles) {
+      return true;
+    }
+
+    const { user } = context.switchToHttp().getRequest();
+    return requiredRoles.some((role) => user.roles?.includes(role));
+  }
+}
+
+// common/decorators/roles.decorator.ts
+export const Roles = (...roles: string[]) => SetMetadata('roles', roles);
+
+// Usage
+@Controller('admin')
+@UseGuards(JwtAuthGuard, RolesGuard)
+export class AdminController {
+  @Get('users')
+  @Roles('ADMIN')
+  async getUsers() {
+    // Only ADMIN can access
+  }
+}
+```
+
+## 🎬 Video Streaming Architecture
+
+### Video Processing Pipeline
+
+```
+1. Upload
+   ┌──────┐      ┌─────────┐      ┌──────┐
+   │Admin │─────►│Frontend │─────►│S3    │
+   └──────┘      └─────────┘      │Bucket│
+                                  └───┬──┘
+                                      │
+2. Trigger Processing                │
+                              ┌───────▼────────┐
+                              │AWS Lambda /    │
+                              │MediaConvert    │
+                              └───────┬────────┘
+                                      │
+3. Transcode                          ▼
+                              Multiple qualities:
+                              - 1080p
+                              - 720p
+                              - 480p
+                              - 360p
+                              
+4. Generate HLS/DASH                  │
+                              ┌───────▼────────┐
+                              │.m3u8 playlist  │
+                              │+ .ts segments  │
+                              └───────┬────────┘
+                                      │
+5. Store & CDN                        ▼
+                              ┌─────────────────┐
+                              │S3 + CloudFront  │
+                              └─────────────────┘
+```
+
+### Video Player Component
+
+```typescript
+// components/academy/VideoPlayer.tsx
+'use client';
+
+import { useRef, useEffect } from 'react';
+import Plyr from 'plyr';
+
+interface VideoPlayerProps {
+  url: string;
+  onProgress: (seconds: number) => void;
+  onComplete: () => void;
+  startTime?: number;
+}
+
+export function VideoPlayer({
+  url,
+  onProgress,
+  onComplete,
+  startTime = 0,
+}: VideoPlayerProps) {
+  const playerRef = useRef<Plyr | null>(null);
+  const progressInterval = useRef<NodeJS.Timeout>();
+
+  useEffect(() => {
+    const player = new Plyr('#player', {
+      controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'],
+      quality: { default: 720, options: [1080, 720, 480, 360] },
+      speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
+    });
+
+    player.currentTime = startTime;
+    playerRef.current = player;
+
+    // Track progress every 10s
+    progressInterval.current = setInterval(() => {
+      if (player.playing) {
+        onProgress(player.currentTime);
+      }
+    }, 10000);
+
+    // Track completion (90% watched)
+    player.on('timeupdate', () => {
+      const progress = (player.currentTime / player.duration) * 100;
+      if (progress >= 90) {
+        onComplete();
+      }
+    });
+
+    return () => {
+      clearInterval(progressInterval.current);
+      player.destroy();
+    };
+  }, [url]);
+
+  return (
+    <div className="relative">
+      <video id="player" src={url} />
+    </div>
+  );
+}
+```
+
+## 🚀 Deployment Architecture
+
+### Production Environment
+
+```
+┌─────────────────────────────────────────────────────┐
+│                    AWS / DigitalOcean                │
+├─────────────────────────────────────────────────────┤
+│                                                      │
+│  ┌────────────────────────────────────────────────┐ │
+│  │            Load Balancer (ALB/NGINX)           │ │
+│  └──────────────────┬─────────────────────────────┘ │
+│                     │                                │
+│     ┌───────────────┴───────────────┐               │
+│     │                               │               │
+│  ┌──▼──────────┐            ┌──────▼──────┐        │
+│  │ Frontend    │            │  Backend    │        │
+│  │ Container   │            │  Container  │        │
+│  │ (x2 replica)│            │ (x3 replica)│        │
+│  └─────────────┘            └─────┬───────┘        │
+│                                   │                 │
+│                     ┌─────────────┴────────┐        │
+│                     │                      │        │
+│              ┌──────▼──────┐        ┌─────▼────┐   │
+│              │ PostgreSQL  │        │  Redis   │   │
+│              │  (Primary)  │        │  Cache   │   │
+│              │             │        └──────────┘   │
+│              │  (Replica)  │                       │
+│              └─────────────┘                       │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+
+External Services:
+┌─────────────┐  ┌─────────────┐  ┌─────────────┐
+│     S3      │  │  CloudFront │  │  Keycloak   │
+│   Videos    │  │     CDN     │  │    Auth     │
+└─────────────┘  └─────────────┘  └─────────────┘
+```
+
+---
+
+**Próximo documento**: [04-DATABASE-DESIGN.md](./04-DATABASE-DESIGN.md)

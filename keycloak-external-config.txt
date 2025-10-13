@@ -1,0 +1,25 @@
+# ============================================
+# CONFIGURAÇÃO PARA KEYCLOAK EXTERNO (EXTRATA)
+# ============================================
+# Copie estas configurações para o seu arquivo .env
+
+# ============================================
+# KEYCLOAK (Authentication - External Extrata)
+# ============================================
+KEYCLOAK_URL=https://keycloak-hlg.extrata.com.br
+KEYCLOAK_REALM=extrata
+KEYCLOAK_CLIENT_ID=academy-backend
+KEYCLOAK_CLIENT_SECRET=your-client-secret-here
+
+# ============================================
+# URLs
+# ============================================
+FRONTEND_URL=http://localhost:3000
+NEXT_PUBLIC_API_URL=http://localhost:4000/api
+NEXT_PUBLIC_KEYCLOAK_URL=https://keycloak-hlg.extrata.com.br
+
+# ============================================
+# FRONTEND PUBLIC VARS (Accessible from browser)
+# ============================================
+NEXT_PUBLIC_KEYCLOAK_REALM=extrata
+NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=academy-frontend

@@ -1,0 +1,709 @@
+# 🎨 EXTRATA ACADEMY - Frontend Design & UX
+
+## 🎯 Design Philosophy
+
+**"Simples, Eficiente e Governamental"**
+
+### Princípios de Design
+1. **Clareza sobre Estilo** - Funcionalidade primeiro
+2. **Acessibilidade WCAG 2.1 AA** - Todos podem usar
+3. **Mobile-first** - Responsivo em todos os dispositivos
+4. **Performance** - <2s page load
+5. **Consistência** - Design system unificado
+
+---
+
+## 🎨 Design System
+
+### Cores
+
+```css
+/* Palette Principal */
+--primary-50: #eff6ff;
+--primary-100: #dbeafe;
+--primary-200: #bfdbfe;
+--primary-300: #93c5fd;
+--primary-400: #60a5fa;
+--primary-500: #3b82f6;  /* Primary */
+--primary-600: #2563eb;
+--primary-700: #1d4ed8;
+--primary-800: #1e40af;
+--primary-900: #1e3a8a;
+
+/* Neutros */
+--gray-50: #f9fafb;
+--gray-100: #f3f4f6;
+--gray-200: #e5e7eb;
+--gray-300: #d1d5db;
+--gray-400: #9ca3af;
+--gray-500: #6b7280;
+--gray-600: #4b5563;
+--gray-700: #374151;
+--gray-800: #1f2937;
+--gray-900: #111827;
+
+/* Semânticas */
+--success: #10b981;
+--warning: #f59e0b;
+--error: #ef4444;
+--info: #3b82f6;
+
+/* Gamificação */
+--xp-color: #8b5cf6;
+--badge-gold: #fbbf24;
+--badge-silver: #9ca3af;
+--badge-bronze: #d97706;
+```
+
+### Tipografia
+
+```css
+/* Font Family */
+--font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+--font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+/* Font Sizes */
+--text-xs: 0.75rem;    /* 12px */
+--text-sm: 0.875rem;   /* 14px */
+--text-base: 1rem;     /* 16px */
+--text-lg: 1.125rem;   /* 18px */
+--text-xl: 1.25rem;    /* 20px */
+--text-2xl: 1.5rem;    /* 24px */
+--text-3xl: 1.875rem;  /* 30px */
+--text-4xl: 2.25rem;   /* 36px */
+
+/* Font Weights */
+--font-normal: 400;
+--font-medium: 500;
+--font-semibold: 600;
+--font-bold: 700;
+
+/* Line Heights */
+--leading-tight: 1.25;
+--leading-normal: 1.5;
+--leading-relaxed: 1.75;
+```
+
+### Spacing
+
+```css
+/* Usando escala de 4px */
+--space-1: 0.25rem;   /* 4px */
+--space-2: 0.5rem;    /* 8px */
+--space-3: 0.75rem;   /* 12px */
+--space-4: 1rem;      /* 16px */
+--space-5: 1.25rem;   /* 20px */
+--space-6: 1.5rem;    /* 24px */
+--space-8: 2rem;      /* 32px */
+--space-10: 2.5rem;   /* 40px */
+--space-12: 3rem;     /* 48px */
+--space-16: 4rem;     /* 64px */
+```
+
+### Shadows
+
+```css
+--shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+--shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+--shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+--shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+--shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+```
+
+### Border Radius
+
+```css
+--radius-sm: 0.25rem;   /* 4px */
+--radius: 0.5rem;       /* 8px */
+--radius-md: 0.75rem;   /* 12px */
+--radius-lg: 1rem;      /* 16px */
+--radius-full: 9999px;  /* Circular */
+```
+
+---
+
+## 📱 Layout & Navigation
+
+### Main Layout Structure
+
+```
+┌─────────────────────────────────────────────────┐
+│                  TOP NAVBAR                      │
+│  Logo | Navigation | Search | User Menu         │
+├───────────┬─────────────────────────────────────┤
+│           │                                      │
+│  SIDEBAR  │         MAIN CONTENT                │
+│           │                                      │
+│  - Home   │  ┌──────────────────────────────┐  │
+│  - Cursos │  │                              │  │
+│  - Meu    │  │        Page Content          │  │
+│    Learn. │  │                              │  │
+│  - Certif.│  │                              │  │
+│  - Leader │  └──────────────────────────────┘  │
+│  - Profile│                                      │
+│           │                                      │
+└───────────┴──────────────────────────────────────┘
+```
+
+### Responsive Breakpoints
+
+```css
+/* Mobile First */
+@media (min-width: 640px) { /* sm */ }
+@media (min-width: 768px) { /* md */ }
+@media (min-width: 1024px) { /* lg */ }
+@media (min-width: 1280px) { /* xl */ }
+@media (min-width: 1536px) { /* 2xl */ }
+```
+
+### Mobile Navigation
+
+```
+┌─────────────────────────────────────┐
+│  ☰ Menu    Logo        🔔 👤       │
+├─────────────────────────────────────┤
+│                                     │
+│         MAIN CONTENT                │
+│                                     │
+│                                     │
+└─────────────────────────────────────┘
+│  🏠  📚  📊  🏆  👤                 │
+└─────────────────────────────────────┘
+    Bottom Navigation (Mobile)
+```
+
+---
+
+## 📄 Key Pages Design
+
+### 1. Dashboard (Home)
+
+**Componentes:**
+```
+┌─────────────────────────────────────────────────┐
+│  Welcome Back, [User Name]! 👋                  │
+│  Nível 5 | 5,000 XP | Próximo: 1,000 XP        │
+├─────────────────────────────────────────────────┤
+│                                                  │
+│  📈 ESTATÍSTICAS RÁPIDAS                        │
+│  ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐          │
+│  │  3   │ │  45% │ │  12  │ │  2   │          │
+│  │Cursos│ │Progr.│ │Horas │ │Cert. │          │
+│  └──────┘ └──────┘ └──────┘ └──────┘          │
+│                                                  │
+│  📚 CONTINUAR APRENDENDO                        │
+│  ┌─────────────────────────────────────────┐   │
+│  │ [Thumbnail] Introdução ao Extrata       │   │
+│  │ ████████░░░░ 75%                        │   │
+│  │ Última lição: Módulo 3, Lição 2        │   │
+│  └─────────────────────────────────────────┘   │
+│                                                  │
+│  🎯 CURSOS RECOMENDADOS                         │
+│  [Card] [Card] [Card]                           │
+│                                                  │
+│  🏆 SEU PROGRESSO ESTA SEMANA                   │
+│  [Chart] XP ganho por dia                       │
+│                                                  │
+└─────────────────────────────────────────────────┘
+```
+
+### 2. Courses List
+
+**Filtros e Grid:**
+```
+┌─────────────────────────────────────────────────┐
+│  Cursos Disponíveis                             │
+├─────────────────────────────────────────────────┤
+│  🔍 [Search]  📁 Categoria ▼  📊 Nível ▼       │
+├─────────────────────────────────────────────────┤
+│                                                  │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐     │
+│  │[Image]   │  │[Image]   │  │[Image]   │     │
+│  │Curso 1   │  │Curso 2   │  │Curso 3   │     │
+│  │⭐ 4.5    │  │⭐ 4.8    │  │⭐ 4.3    │     │
+│  │2.5h      │  │5h        │  │3h        │     │
+│  │150 alunos│  │320 alunos│  │89 alunos │     │
+│  │[Iniciar] │  │[Iniciar] │  │[Iniciar] │     │
+│  └──────────┘  └──────────┘  └──────────┘     │
+│                                                  │
+│  [Mais cursos...]                               │
+│                                                  │
+└─────────────────────────────────────────────────┘
+```
+
+### 3. Course Player (Learning Interface)
+
+**Layout imersivo:**
+```
+┌─────────────────────────────────────────────────┐
+│  Introdução ao Extrata         [X] Sair        │
+│  ████████████████░░░░ 75%                       │
+├──────────┬──────────────────────────────────────┤
+│          │                                      │
+│ MÓDULOS  │        VIDEO PLAYER                 │
+│          │    ┌─────────────────────┐          │
+│ ✓ Módulo1│    │                     │          │
+│   ✓ 1.1  │    │    [▶ Play]        │          │
+│   ✓ 1.2  │    │                     │          │
+│   ✓ 1.3  │    └─────────────────────┘          │
+│          │    ⏮ 1x 🔊 ⚙️ ⛶              │
+│ ▶ Módulo2│                                      │
+│   → 2.1  │    Lição 2.1: Conceitos Básicos     │
+│   ○ 2.2  │                                      │
+│   ○ 2.3  │    [Descrição da lição...]          │
+│          │                                      │
+│ ○ Módulo3│    📎 Recursos:                     │
+│   ○ 3.1  │    • Slides da aula.pdf             │
+│   ○ 3.2  │    • Exercícios práticos.zip        │
+│          │                                      │
+│          │    [← Anterior]  [Próxima →]        │
+│          │                                      │
+└──────────┴──────────────────────────────────────┘
+```
+
+### 4. Quiz Interface
+
+```
+┌─────────────────────────────────────────────────┐
+│  Quiz: Avaliação Módulo 1                      │
+│  Questão 3 de 10          ⏱️ 08:45             │
+├─────────────────────────────────────────────────┤
+│                                                  │
+│  Qual é a principal função do Extrata?          │
+│                                                  │
+│  ⚪ Opção A: Gestão de projetos                │
+│  ⚪ Opção B: Captação de recursos               │
+│  ⚪ Opção C: Controle financeiro                │
+│  ⚪ Opção D: Gestão de pessoas                  │
+│                                                  │
+│                                                  │
+│  [← Anterior]              [Próxima →]          │
+│                                                  │
+└─────────────────────────────────────────────────┘
+```
+
+### 5. Profile / Achievements
+
+```
+┌─────────────────────────────────────────────────┐
+│  👤 João Silva                  [Editar Perfil] │
+├─────────────────────────────────────────────────┤
+│                                                  │
+│  🎖️ NÍVEL 5                                    │
+│  5,000 XP  ████████░░ 50%  Próximo: 10,000     │
+│                                                  │
+│  📊 ESTATÍSTICAS                                │
+│  • Cursos completados: 3                        │
+│  • Horas de estudo: 12h                         │
+│  • Streak atual: 7 dias 🔥                      │
+│  • Certificados: 2                              │
+│                                                  │
+│  🏆 CONQUISTAS (8/25)                           │
+│  ┌────┐ ┌────┐ ┌────┐ ┌────┐ ┌────┐          │
+│  │ 🎯 │ │ 🤖 │ │ ⚡ │ │ 🎓 │ │ 🏆 │          │
+│  │1° C│ │IA  │ │Fast│ │Ment│ │Top │          │
+│  └────┘ └────┘ └────┘ └────┘ └────┘          │
+│                                                  │
+│  🎯 PRÓXIMAS CONQUISTAS                         │
+│  • Speed Runner: Complete curso em <24h  (65%) │
+│  • Mestre da IA: Complete todos cursos IA (2/5)│
+│                                                  │
+└─────────────────────────────────────────────────┘
+```
+
+---
+
+## 🧩 Component Library
+
+### Button Variants
+
+```tsx
+// Primary
+<Button variant="primary" size="md">
+  Iniciar Curso
+</Button>
+
+// Secondary
+<Button variant="secondary" size="md">
+  Cancelar
+</Button>
+
+// Outline
+<Button variant="outline" size="md">
+  Saiba Mais
+</Button>
+
+// Ghost
+<Button variant="ghost" size="sm">
+  <Icon /> Editar
+</Button>
+
+// Sizes
+<Button size="xs">Extra Small</Button>
+<Button size="sm">Small</Button>
+<Button size="md">Medium</Button>
+<Button size="lg">Large</Button>
+```
+
+### Cards
+
+```tsx
+// Course Card
+<CourseCard
+  title="Introdução ao Extrata"
+  thumbnail="/images/course-1.jpg"
+  rating={4.5}
+  duration="2.5h"
+  students={150}
+  progress={75}
+  onEnroll={() => {}}
+/>
+
+// Achievement Card
+<AchievementCard
+  icon="🎯"
+  name="Primeira Conquista"
+  description="Complete seu primeiro curso"
+  earned={true}
+  earnedAt="2025-01-15"
+/>
+
+// Stats Card
+<StatsCard
+  icon={<BookOpen />}
+  label="Cursos"
+  value={3}
+  trend="+2 este mês"
+/>
+```
+
+### Progress Indicators
+
+```tsx
+// Linear Progress Bar
+<ProgressBar value={75} max={100} />
+
+// Circular Progress
+<CircularProgress value={75} size="lg" />
+
+// XP Progress
+<XPProgress
+  currentXP={5000}
+  nextLevelXP={10000}
+  level={5}
+/>
+
+// Course Progress
+<CourseProgress
+  lessonsTotal={20}
+  lessonsCompleted={15}
+  percentage={75}
+/>
+```
+
+### Gamification Components
+
+```tsx
+// XP Notification (Toast)
+<XPNotification
+  amount={50}
+  reason="Lesson completed"
+/>
+
+// Level Up Modal
+<LevelUpModal
+  newLevel={5}
+  rewards={['New badge', 'Access to advanced courses']}
+/>
+
+// Badge
+<Badge
+  icon="🎯"
+  name="First Course"
+  size="md"
+  earned={true}
+/>
+
+// Leaderboard Entry
+<LeaderboardEntry
+  rank={1}
+  user={{
+    name: "João Silva",
+    avatar: "/avatars/joao.jpg"
+  }}
+  xp={15000}
+  level={10}
+  isCurrentUser={false}
+/>
+```
+
+---
+
+## 🎭 Animations & Transitions
+
+### Micro-interactions
+
+```css
+/* Button Hover */
+.button {
+  transition: all 0.2s ease;
+}
+.button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Card Hover */
+.card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.card:hover {
+  transform: scale(1.02);
+  box-shadow: var(--shadow-lg);
+}
+
+/* XP Gain Animation */
+@keyframes xpGain {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0;
+  }
+  50% {
+    transform: translateY(-20px) scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-40px) scale(1);
+    opacity: 0;
+  }
+}
+
+/* Level Up Animation */
+@keyframes levelUp {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Progress Bar Fill */
+@keyframes progressFill {
+  from {
+    width: 0%;
+  }
+  to {
+    width: var(--progress-value);
+  }
+}
+```
+
+### Page Transitions
+
+```tsx
+// Using Framer Motion
+import { motion } from 'framer-motion';
+
+const pageVariants = {
+  initial: { opacity: 0, y: 20 },
+  enter: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -20 }
+};
+
+export default function Page() {
+  return (
+    <motion.div
+      variants={pageVariants}
+      initial="initial"
+      animate="enter"
+      exit="exit"
+      transition={{ duration: 0.3 }}
+    >
+      {/* Page content */}
+    </motion.div>
+  );
+}
+```
+
+---
+
+## ♿ Accessibility Guidelines
+
+### WCAG 2.1 AA Compliance
+
+**Color Contrast:**
+- Text: Minimum 4.5:1 ratio
+- Large text (18pt+): Minimum 3:1 ratio
+- Interactive elements: Minimum 3:1 ratio
+
+**Keyboard Navigation:**
+```tsx
+// All interactive elements must be keyboard accessible
+<button
+  onClick={handleClick}
+  onKeyDown={(e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      handleClick();
+    }
+  }}
+  tabIndex={0}
+  aria-label="Start course"
+>
+  Iniciar Curso
+</button>
+```
+
+**ARIA Labels:**
+```tsx
+// Proper semantic HTML + ARIA
+<nav aria-label="Main navigation">
+  <ul>
+    <li><a href="/dashboard">Dashboard</a></li>
+  </ul>
+</nav>
+
+<button aria-label="Close modal" onClick={onClose}>
+  <X />
+</button>
+
+<div role="progressbar" aria-valuenow={75} aria-valuemin={0} aria-valuemax={100}>
+  75% complete
+</div>
+```
+
+**Screen Reader Support:**
+- Use semantic HTML (header, nav, main, aside, footer)
+- Add alt text to all images
+- Use aria-live for dynamic content
+- Provide skip links
+
+---
+
+## 📱 Mobile Optimization
+
+### Touch Targets
+- Minimum 44x44px for all interactive elements
+- Adequate spacing between clickable elements
+
+### Mobile-specific Patterns
+```tsx
+// Pull to Refresh
+<PullToRefresh onRefresh={loadData}>
+  <Content />
+</PullToRefresh>
+
+// Bottom Sheet (Mobile Modals)
+<BottomSheet open={open} onClose={onClose}>
+  <SheetContent />
+</BottomSheet>
+
+// Swipe Actions
+<SwipeableListItem
+  onSwipeLeft={() => markComplete()}
+  onSwipeRight={() => bookmark()}
+>
+  <LessonItem />
+</SwipeableListItem>
+```
+
+---
+
+## 🎨 Dark Mode Support
+
+```css
+/* CSS Variables for theming */
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9fafb;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+}
+
+[data-theme="dark"] {
+  --bg-primary: #111827;
+  --bg-secondary: #1f2937;
+  --text-primary: #f9fafb;
+  --text-secondary: #9ca3af;
+}
+```
+
+```tsx
+// Theme Toggle
+import { useTheme } from 'next-themes';
+
+export function ThemeToggle() {
+  const { theme, setTheme } = useTheme();
+  
+  return (
+    <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+      {theme === 'dark' ? <Sun /> : <Moon />}
+    </button>
+  );
+}
+```
+
+---
+
+## 📊 Performance Optimization
+
+### Image Optimization
+```tsx
+import Image from 'next/image';
+
+<Image
+  src="/course-thumbnail.jpg"
+  alt="Course thumbnail"
+  width={400}
+  height={300}
+  loading="lazy"
+  placeholder="blur"
+  blurDataURL="data:image/..."
+/>
+```
+
+### Code Splitting
+```tsx
+import dynamic from 'next/dynamic';
+
+const VideoPlayer = dynamic(() => import('@/components/VideoPlayer'), {
+  loading: () => <Skeleton />,
+  ssr: false
+});
+```
+
+### Lazy Loading
+```tsx
+import { lazy, Suspense } from 'react';
+
+const HeavyComponent = lazy(() => import('./HeavyComponent'));
+
+<Suspense fallback={<Loading />}>
+  <HeavyComponent />
+</Suspense>
+```
+
+---
+
+## ✅ Design Checklist
+
+- [ ] Design system implementado (cores, tipografia, spacing)
+- [ ] Componentes reutilizáveis criados
+- [ ] Responsive em todos os breakpoints
+- [ ] Acessibilidade WCAG 2.1 AA
+- [ ] Dark mode implementado
+- [ ] Animations suaves e performáticas
+- [ ] Loading states em todas as ações
+- [ ] Error states com mensagens claras
+- [ ] Empty states com call-to-action
+- [ ] Feedback visual para todas as interações
+- [ ] Performance otimizada (<2s load)
+
+---
+
+**Next document**: [07-DEVELOPMENT-GUIDE.md](./07-DEVELOPMENT-GUIDE.md)

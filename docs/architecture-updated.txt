@@ -1,0 +1,925 @@
+# 🏗️ EXTRATA ACADEMY - Arquitetura Técnica
+
+> **Versão**: 2.0 (Atualizado em 06/10/2025)  
+> **Changelog**: Adicionadas integrações com Extrata, observability stack, compliance architecture
+
+## 📊 Visão Geral da Arquitetura
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         USERS                                    │
+│          (Web Browser, Mobile, Desktop)                          │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    CLOUDFLARE CDN                                │
+│         (Static Assets, DDoS Protection, WAF)                    │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+                    ┌────────┴────────┐
+                    │                 │
+                    ▼                 ▼
+         ┌──────────────────┐  ┌──────────────────┐
+         │   FRONTEND       │  │   BACKEND API    │
+         │   (Next.js 14)   │  │   (NestJS)       │
+         │                  │  │                  │
+         │  - App Router    │  │  - REST API      │
+         │  - Server Comp.  │  │  - GraphQL       │
+         │  - React Query   │  │  - WebSockets    │
+         └────────┬─────────┘  └────────┬─────────┘
+                  │                      │
+                  └──────────┬───────────┘
+                             │
+            ┌────────────────┼────────────────┐
+            │                │                │
+            ▼                ▼                ▼
+    ┌─────────────┐  ┌─────────────┐  ┌─────────────┐
+    │  PostgreSQL │  │    Redis    │  │  Keycloak   │
+    │             │  │             │  │             │
+    │  - Primary  │  │  - Cache    │  │  - SSO      │
+    │  - Replica  │  │  - Sessions │  │  - OAuth2   │
+    │  - Backup   │  │  - Queue    │  │  - OIDC     │
+    └─────────────┘  └─────────────┘  └─────────────┘
+            │                │                │
+            └────────────────┼────────────────┘
+                             │
+                ┌────────────┴────────────┐
+                │                         │
+                ▼                         ▼
+        ┌─────────────┐           ┌─────────────┐
+        │   AWS S3    │           │  EXTRATA    │
+        │             │           │   MAIN      │
+        │  - Videos   │           │   SYSTEM    │
+        │  - Images   │           │             │
+        │  - PDFs     │           │  - APIs     │
+        │  - Backups  │           │  - Webhooks │
+        └─────────────┘           └─────────────┘
+                │                         │
+                └────────────┬────────────┘
+                             │
+                             ▼
+                ┌──────────────────────────┐
+                │  OBSERVABILITY STACK     │
+                │                          │
+                │  - Prometheus (Metrics)  │
+                │  - Loki (Logs)           │
+                │  - Jaeger (Traces)       │
+                │  - Grafana (Dashboards)  │
+                │  - Alertmanager          │
+                └──────────────────────────┘
+```
+
+---
+
+## 🛠️ Stack Tecnológico
+
+### Frontend
+- **Framework**: Next.js 14 (App Router, React Server Components)
+- **UI**: Tailwind CSS, shadcn/ui
+- **State**: Zustand, TanStack Query (React Query)
+- **Forms**: React Hook Form + Zod
+- **Charts**: Recharts
+- **Icons**: Lucide React
+- **Auth**: NextAuth.js (Keycloak provider)
+
+### Backend
+- **Framework**: NestJS 10 (TypeScript, Node.js 20)
+- **API**: REST + GraphQL (Apollo)
+- **ORM**: TypeORM
+- **Validation**: class-validator, class-transformer
+- **Auth**: Passport (JWT, OAuth2)
+- **Queue**: Bull (Redis-based)
+- **WebSockets**: Socket.io
+
+### Database & Cache
+- **Primary DB**: PostgreSQL 17
+- **Cache**: Redis 7
+- **Search**: (Future: Elasticsearch)
+
+### Auth & Identity
+- **SSO**: Keycloak 24
+- **Protocol**: OAuth2 / OpenID Connect
+- **Session**: Redis-backed
+
+### Storage & CDN
+- **Object Storage**: AWS S3
+- **CDN**: Cloudflare
+- **Video**: S3 + CloudFront (streaming)
+
+### Observability ⭐ NOVO
+- **Metrics**: Prometheus
+- **Logs**: Winston → Loki
+- **Traces**: OpenTelemetry → Jaeger
+- **Dashboards**: Grafana
+- **Alerts**: Alertmanager → Slack/PagerDuty
+- **APM**: Elastic APM (opcional)
+
+### DevOps & Infrastructure
+- **Cloud**: AWS (ECS, RDS, S3, CloudWatch)
+- **CI/CD**: GitHub Actions
+- **Container**: Docker
+- **Orchestration**: Docker Compose (dev), ECS (prod)
+- **IaC**: Terraform (future)
+
+---
+
+## 🔗 Integração com Sistema Extrata ⭐ NOVO
+
+### Arquitetura de Integração
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    EXTRATA MAIN SYSTEM                           │
+│  ┌────────────┐  ┌────────────┐  ┌────────────┐                │
+│  │ Propostas  │  │ Municípios │  │  Usuários  │                │
+│  │   Module   │  │   Module   │  │   Module   │                │
+│  └──────┬─────┘  └──────┬─────┘  └──────┬─────┘                │
+│         │                │                │                      │
+└─────────┼────────────────┼────────────────┼──────────────────────┘
+          │                │                │
+          │  REST APIs     │  GraphQL       │  Webhooks
+          │                │                │
+┌─────────▼────────────────▼────────────────▼──────────────────────┐
+│              INTEGRATION LAYER (API Gateway)                      │
+│  ┌──────────────────────────────────────────────────────────┐    │
+│  │  - Authentication (Keycloak SSO)                         │    │
+│  │  - Rate Limiting (100 req/min)                           │    │
+│  │  - Request/Response Transformation                       │    │
+│  │  - Caching (Redis) com TTL 5min                          │    │
+│  │  - Error Handling & Retry Logic (3x com backoff)         │    │
+│  │  - Circuit Breaker (abre após 5 falhas)                  │    │
+│  │  - Webhook Signature Validation (HMAC-SHA256)            │    │
+│  └──────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────┬─────────────────────────────────┘
+                                  │
+                                  │
+┌─────────────────────────────────▼─────────────────────────────────┐
+│                  EXTRATA ACADEMY LMS                              │
+│  ┌────────────┐  ┌────────────┐  ┌────────────┐                  │
+│  │  Courses   │  │   Users    │  │ Analytics  │                  │
+│  │   Module   │  │   Module   │  │   Module   │                  │
+│  └────────────┘  └────────────┘  └────────────┘                  │
+└───────────────────────────────────────────────────────────────────┘
+```
+
+### Componentes de Integração
+
+#### 1. Extrata API Client
+**Localização**: `backend/src/integration/extrata-client.ts`
+
+```typescript
+export class ExtrataApiClient {
+  private accessToken: string;
+  private circuitBreaker: CircuitBreaker;
+  
+  // Service account authentication
+  async authenticate(): Promise<void>;
+  
+  // Endpoints
+  async getUser(keycloakId: string): Promise<ExtrataUser>;
+  async getMunicipalities(): Promise<Municipality[]>;
+  async getUsersByMunicipality(municipalityId: string): Promise<User[]>;
+  
+  // Com circuit breaker e retry
+  private async withResilience<T>(fn: () => Promise<T>): Promise<T>;
+}
+```
+
+#### 2. Webhook Handler
+**Localização**: `backend/src/integration/webhook-handler.ts`
+
+```typescript
+@Controller('webhooks')
+export class WebhookController {
+  @Post('extrata')
+  async handleExtrataWebhook(
+    @Body() payload: WebhookPayload,
+    @Headers('x-extrata-signature') signature: string,
+  ) {
+    // 1. Validar assinatura HMAC
+    this.validateSignature(payload, signature);
+    
+    // 2. Processar evento de forma idempotente
+    await this.processEvent(payload);
+    
+    // 3. Retry automático via SQS se falhar
+  }
+}
+```
+
+**Eventos suportados**:
+- `user.created` → Sincronizar novo usuário
+- `user.updated` → Atualizar dados do usuário
+- `user.deleted` → Soft delete do usuário
+- `municipality.created` → Adicionar município
+
+#### 3. SSO Integration
+**Flow OAuth2/OIDC completo**:
+
+```
+1. User → Academy Login
+2. Academy → Redirect to Keycloak
+3. User → Login no Keycloak (se necessário)
+4. Keycloak → Callback com authorization code
+5. Academy → Exchange code for tokens
+6. Academy → Fetch user info from Keycloak
+7. Academy → Sync additional data from Extrata API
+8. Academy → Create/update local user
+9. Academy → Create session → Redirect to dashboard
+```
+
+#### 4. Deep Linking
+**Exemplos**:
+
+```typescript
+// Extrata → Academy
+const academyLinks = {
+  course: (id) => `https://academy.extrata.gov.br/courses/${id}`,
+  enroll: (courseId, userId) => 
+    `https://academy.extrata.gov.br/enroll/${courseId}?user=${userId}&token=${token}`,
+};
+
+// Academy → Extrata
+const extraLinks = {
+  profile: (userId) => `https://extrata.gov.br/profile/${userId}`,
+  dashboard: () => `https://extrata.gov.br/dashboard`,
+};
+```
+
+---
+
+## 🎯 Arquitetura de Dados
+
+### Database Schema (High-Level)
+
+```sql
+-- Core
+users (id, keycloak_id, email, name, role, municipality_id)
+├── user_xp (user_id, total_xp, level)
+├── user_achievements (user_id, achievement_id)
+└── user_consents (user_id, consent_type, granted) ⭐ NOVO
+
+courses (id, title, slug, status, created_by)
+├── modules (id, course_id, title, order_index)
+│   └── lessons (id, module_id, type, content)
+└── course_analytics (course_id, metrics)
+
+-- Progress
+enrollments (id, user_id, course_id, progress_percentage)
+└── lesson_progress (id, enrollment_id, lesson_id, status)
+
+-- Quizzes
+quizzes (id, lesson_id, passing_score)
+├── questions (id, quiz_id, type, options)
+└── quiz_attempts (id, user_id, quiz_id, score)
+
+-- Certificates
+certificates (id, user_id, course_id, code, issued_at)
+
+-- Compliance ⭐ NOVO
+audit_logs (id, event_type, user_id, resource_type, action, ip_address)
+data_subject_requests (id, user_id, request_type, status)
+security_incidents (id, incident_type, severity, affected_users_count)
+
+-- Integration ⭐ NOVO
+webhook_events (id, event_type, payload, status, retry_count)
+sync_status (id, entity_type, entity_id, last_synced_at)
+```
+
+### Relacionamentos
+
+```
+users 1:N enrollments
+enrollments 1:N lesson_progress
+courses 1:N modules
+modules 1:N lessons
+lessons 1:1 quizzes (optional)
+quizzes 1:N questions
+users N:M quiz_attempts
+users 1:N certificates
+users 1:N audit_logs ⭐ NOVO
+users 1:N user_consents ⭐ NOVO
+```
+
+---
+
+## 🔄 Data Flows
+
+### Exemplo 1: Curso Completo (End-to-End)
+
+```
+1. User Login
+   Browser → Next.js → Keycloak → Academy Backend
+   ↓
+2. Keycloak Callback
+   Keycloak → Academy → Fetch Extrata API → Create Session
+   ↓
+3. Browse Courses
+   Browser → Next.js → Academy API → PostgreSQL
+   (Cache em Redis por 5min)
+   ↓
+4. Enroll
+   Browser → POST /enrollments → PostgreSQL
+   (Event: enrollment_created → Metrics)
+   ↓
+5. Watch Lesson
+   Browser → GET /lessons/:id → PostgreSQL
+   Video Stream ← S3/CloudFront
+   (Progress saved every 10s)
+   ↓
+6. Complete Lesson
+   Browser → PATCH /progress/:id → PostgreSQL
+   (Event: lesson_completed → XP awarded)
+   ↓
+7. Take Quiz
+   Browser → POST /quizzes/:id/attempts → PostgreSQL
+   (Auto-grade → Update progress)
+   ↓
+8. Course Completed (100%)
+   PostgreSQL Trigger → Certificate Generation
+   S3 Upload → Email Notification
+   ↓
+9. Download Certificate
+   Browser → GET /certificates/:id → S3 (signed URL)
+```
+
+### Exemplo 2: Sincronização de Usuário (Webhook) ⭐ NOVO
+
+```
+1. Extrata Main
+   User updated → Trigger webhook
+   ↓
+2. Academy Webhook Endpoint
+   POST /webhooks/extrata
+   Validate HMAC signature
+   ↓
+3. Process Event
+   Extract user_id from payload
+   ↓
+4. Fetch Full Data
+   GET Extrata API /users/{user_id}
+   (With circuit breaker)
+   ↓
+5. Update Local DB
+   UPSERT users table
+   Update sync_status
+   ↓
+6. Audit Log
+   INSERT audit_logs
+   (event: user_synced)
+   ↓
+7. Notify if Needed
+   Email/Push notification (opcional)
+```
+
+---
+
+## 🏛️ Backend Architecture
+
+### Módulos NestJS
+
+```
+src/
+├── main.ts
+├── app.module.ts
+├── common/
+│   ├── decorators/
+│   ├── filters/
+│   ├── guards/
+│   ├── interceptors/
+│   │   ├── metrics.interceptor.ts ⭐ NOVO
+│   │   └── tracing.interceptor.ts ⭐ NOVO
+│   └── pipes/
+├── config/
+│   ├── database.config.ts
+│   ├── redis.config.ts
+│   ├── keycloak.config.ts
+│   └── observability.config.ts ⭐ NOVO
+├── auth/
+│   ├── auth.controller.ts
+│   ├── auth.service.ts
+│   ├── strategies/
+│   │   ├── jwt.strategy.ts
+│   │   └── oauth.strategy.ts
+│   └── guards/
+│       ├── jwt-auth.guard.ts
+│       └── roles.guard.ts
+├── users/
+│   ├── users.controller.ts
+│   ├── users.service.ts
+│   ├── entities/user.entity.ts
+│   └── dto/
+├── courses/
+│   ├── courses.controller.ts
+│   ├── courses.service.ts
+│   ├── entities/
+│   │   ├── course.entity.ts
+│   │   ├── module.entity.ts
+│   │   └── lesson.entity.ts
+│   └── dto/
+├── enrollments/
+├── progress/
+├── quizzes/
+├── certificates/
+├── gamification/
+├── analytics/
+├── compliance/ ⭐ NOVO
+│   ├── audit-logger.ts
+│   ├── consent.service.ts
+│   ├── rights.service.ts
+│   └── incident-response.service.ts
+├── integration/ ⭐ NOVO
+│   ├── extrata-client.ts
+│   ├── webhook-handler.ts
+│   ├── sync.service.ts
+│   └── circuit-breaker.ts
+└── monitoring/ ⭐ NOVO
+    ├── metrics.ts
+    ├── logger.service.ts
+    ├── tracer.ts
+    └── health.controller.ts
+```
+
+### Camadas da Aplicação
+
+```
+┌─────────────────────────┐
+│     Controllers         │  ← HTTP/WebSocket handlers
+├─────────────────────────┤
+│     Services            │  ← Business logic
+├─────────────────────────┤
+│     Repositories        │  ← Data access (TypeORM)
+├─────────────────────────┤
+│     Entities            │  ← Domain models
+└─────────────────────────┘
+```
+
+### Exemplo de Implementação
+
+**Controller**:
+```typescript
+@Controller('courses')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@UseInterceptors(MetricsInterceptor, TracingInterceptor) ⭐ NOVO
+export class CoursesController {
+  constructor(
+    private readonly coursesService: CoursesService,
+    private readonly auditLogger: AuditLogger, ⭐ NOVO
+  ) {}
+
+  @Get()
+  @Roles('STUDENT', 'INSTRUCTOR', 'ADMIN')
+  async findAll(@Query() filters: CourseFilterDto) {
+    return this.coursesService.findAll(filters);
+  }
+
+  @Post()
+  @Roles('INSTRUCTOR', 'ADMIN')
+  async create(
+    @Body() dto: CreateCourseDto,
+    @CurrentUser() user: User,
+  ) {
+    const course = await this.coursesService.create(dto, user.id);
+    
+    // Audit log ⭐ NOVO
+    await this.auditLogger.log({
+      event_type: 'course_created',
+      user_id: user.id,
+      resource_type: 'course',
+      resource_id: course.id,
+      action: 'CREATE',
+    });
+    
+    return course;
+  }
+}
+```
+
+**Service**:
+```typescript
+@Injectable()
+export class CoursesService {
+  private readonly logger = new LoggerService(CoursesService.name); ⭐ NOVO
+  
+  constructor(
+    @InjectRepository(Course)
+    private coursesRepo: Repository<Course>,
+    private cacheManager: Cache,
+  ) {}
+
+  async findAll(filters: CourseFilterDto) {
+    const cacheKey = `courses:${JSON.stringify(filters)}`;
+    
+    // Try cache first
+    const cached = await this.cacheManager.get(cacheKey);
+    if (cached) {
+      this.logger.log('Cache hit', { cacheKey }); ⭐ NOVO
+      return cached;
+    }
+    
+    // Query database
+    const courses = await this.coursesRepo.find({ where: filters });
+    
+    // Cache for 5min
+    await this.cacheManager.set(cacheKey, courses, 300);
+    
+    this.logger.log('Courses fetched', { count: courses.length }); ⭐ NOVO
+    
+    return courses;
+  }
+}
+```
+
+---
+
+## 🎨 Frontend Architecture
+
+### Estrutura (App Router)
+
+```
+src/
+├── app/
+│   ├── layout.tsx
+│   ├── page.tsx
+│   ├── (auth)/
+│   │   ├── login/page.tsx
+│   │   └── callback/page.tsx
+│   ├── (platform)/
+│   │   ├── layout.tsx
+│   │   ├── dashboard/page.tsx
+│   │   ├── courses/
+│   │   │   ├── page.tsx
+│   │   │   └── [id]/page.tsx
+│   │   ├── my-learning/page.tsx
+│   │   ├── achievements/page.tsx
+│   │   └── profile/page.tsx
+│   └── api/
+│       ├── auth/[...nextauth]/route.ts
+│       └── webhooks/route.ts
+├── components/
+│   ├── ui/ (shadcn)
+│   ├── academy/
+│   │   ├── CourseCard.tsx
+│   │   ├── VideoPlayer.tsx
+│   │   ├── QuizRenderer.tsx
+│   │   └── ProgressBar.tsx
+│   └── layout/
+│       ├── Header.tsx
+│       ├── Sidebar.tsx
+│       └── Footer.tsx
+├── lib/
+│   ├── api/
+│   │   ├── client.ts
+│   │   └── endpoints.ts
+│   ├── auth/
+│   │   └── session.ts
+│   ├── hooks/
+│   │   ├── useAuth.ts
+│   │   ├── useCourses.ts
+│   │   └── useProgress.ts
+│   └── utils/
+│       ├── cn.ts
+│       └── format.ts
+└── store/
+    ├── authStore.ts
+    └── uiStore.ts
+```
+
+### State Management
+
+**Server State (TanStack Query)**:
+```typescript
+// hooks/useCourses.ts
+export function useCourses(filters?: CourseFilters) {
+  return useQuery({
+    queryKey: ['courses', filters],
+    queryFn: () => api.courses.findAll(filters),
+    staleTime: 5 * 60 * 1000, // 5min
+  });
+}
+```
+
+**Client State (Zustand)**:
+```typescript
+// store/authStore.ts
+export const useAuthStore = create<AuthStore>((set) => ({
+  user: null,
+  isAuthenticated: false,
+  login: async (credentials) => {
+    const user = await api.auth.login(credentials);
+    set({ user, isAuthenticated: true });
+  },
+  logout: () => set({ user: null, isAuthenticated: false }),
+}));
+```
+
+### Data Fetching
+
+**Server Components** (default):
+```typescript
+// app/courses/page.tsx
+export default async function CoursesPage() {
+  const courses = await api.courses.findAll();
+  
+  return <CourseList courses={courses} />;
+}
+```
+
+**Client Components** (interativo):
+```typescript
+'use client';
+
+export function CourseCatalog() {
+  const { data: courses, isLoading } = useCourses();
+  
+  if (isLoading) return <Skeleton />;
+  
+  return <CourseGrid courses={courses} />;
+}
+```
+
+---
+
+## 📊 Observability Stack ⭐ NOVO
+
+### Arquitetura de Observabilidade
+
+```
+┌─────────────────────────────────────────────────────┐
+│         APPLICATION LAYER                           │
+│  (Instrumented with metrics/logs/traces)            │
+└────────────┬────────────────────────────────────────┘
+             │
+    ┌────────┼────────┐
+    │        │        │
+    ▼        ▼        ▼
+┌─────┐  ┌─────┐  ┌───────┐
+│Prom │  │Loki │  │Jaeger │
+│     │  │     │  │       │
+└──┬──┘  └──┬──┘  └───┬───┘
+   │        │          │
+   └────────┴──────────┘
+            │
+            ▼
+      ┌──────────┐
+      │ Grafana  │
+      │          │
+      └────┬─────┘
+           │
+           ▼
+    ┌─────────────┐
+    │Alertmanager │
+    │             │
+    └──────┬──────┘
+           │
+      ┌────┴────┐
+      │         │
+      ▼         ▼
+   [Slack] [PagerDuty]
+```
+
+### Componentes
+
+#### 1. Prometheus (Métricas)
+**Métricas coletadas**:
+- HTTP request duration (histogram)
+- HTTP request total (counter)
+- Active users (gauge)
+- Enrollments total (counter)
+- Certificates issued (counter)
+- Database connections (gauge)
+- Cache hit/miss ratio
+- Video streaming metrics
+
+**Configuração**:
+```yaml
+# prometheus.yml
+scrape_configs:
+  - job_name: 'academy-backend'
+    static_configs:
+      - targets: ['backend:4000']
+    metrics_path: '/metrics'
+```
+
+#### 2. Loki (Logs)
+**Log aggregation**:
+```typescript
+// Structured logging
+logger.info('user_action', {
+  context: 'CoursesService',
+  user_id: '123',
+  action: 'enrolled',
+  course_id: '456',
+  timestamp: new Date().toISOString(),
+});
+```
+
+#### 3. Jaeger (Tracing)
+**Distributed tracing**:
+```typescript
+// Automatic instrumentation
+const span = tracer.startSpan('database.query');
+span.setTag('db.table', 'courses');
+// ... execute query
+span.finish();
+```
+
+#### 4. Grafana (Dashboards)
+**3 dashboards principais**:
+1. Application Health (latency, errors, throughput)
+2. Business Metrics (enrollments, completions, certificates)
+3. Infrastructure (CPU, memory, DB connections)
+
+#### 5. Alertmanager (Alertas)
+**Alertas configurados**:
+- High error rate (>1%)
+- High latency (p95 >500ms)
+- Database connection pool exhausted
+- Service down
+- Video buffering rate high
+
+**Notification channels**:
+- Slack: `#academy-alerts`
+- PagerDuty: On-call rotation
+
+### SLIs & SLOs
+
+**SLIs (Service Level Indicators)**:
+```yaml
+- http_request_duration_seconds (p50, p95, p99)
+- http_requests_total (by status_code)
+- video_stream_start_duration_seconds
+- database_query_duration_seconds
+```
+
+**SLOs (Service Level Objectives)**:
+```yaml
+- Availability: 99.5% (3.65h downtime/month max)
+- Latency p95: < 200ms
+- Latency p99: < 500ms
+- Error rate: < 0.1%
+- Video start time p95: < 3s
+```
+
+---
+
+## 🔐 Autenticação (OAuth2/OIDC)
+
+### Flow Completo
+
+```
+┌──────┐                                          ┌──────────┐
+│Client│                                          │Keycloak  │
+└──┬───┘                                          └────┬─────┘
+   │                                                    │
+   │  1. GET /login                                    │
+   ├──────────────────────────────────────────────────>│
+   │                                                    │
+   │  2. Redirect to Keycloak auth URL                 │
+   │<───────────────────────────────────────────────────┤
+   │                                                    │
+   │  3. User authenticates                            │
+   ├──────────────────────────────────────────────────>│
+   │                                                    │
+   │  4. Redirect to callback with code                │
+   │<───────────────────────────────────────────────────┤
+   │                                                    │
+   │  5. POST /auth/callback?code=xyz                  │
+   ├──────────────────────────────────────────────────>│
+   │                                                    │
+┌──┴───┐                                          ┌────┴─────┐
+│Academy│                                         │Keycloak  │
+└──┬───┘                                          └────┬─────┘
+   │                                                    │
+   │  6. Exchange code for tokens                      │
+   ├──────────────────────────────────────────────────>│
+   │                                                    │
+   │  7. Return access_token + refresh_token           │
+   │<───────────────────────────────────────────────────┤
+   │                                                    │
+   │  8. GET user info                                 │
+   ├──────────────────────────────────────────────────>│
+   │                                                    │
+   │  9. Return user profile                           │
+   │<───────────────────────────────────────────────────┤
+   │                                                    │
+   │  10. Fetch additional data from Extrata API       │
+   │  11. Create/update local user                     │
+   │  12. Create session → Redirect to dashboard       │
+```
+
+---
+
+## 🎥 Video Streaming
+
+### Pipeline de Processamento
+
+```
+1. Upload
+   Instructor → S3 (multipart upload)
+   ↓
+2. Transcode (Lambda/MediaConvert)
+   Original → [1080p, 720p, 480p, 360p]
+   ↓
+3. Store
+   S3 bucket (transcoded/)
+   ↓
+4. Deliver
+   CloudFront (CDN) → HLS/DASH
+   ↓
+5. Play
+   Video.js player → Adaptive bitrate
+```
+
+### Player Features
+- Adaptive bitrate streaming (HLS)
+- Resume from last position
+- Speed control (0.5x - 2x)
+- Quality selector
+- Fullscreen
+- Picture-in-picture
+- Keyboard shortcuts
+
+---
+
+## 🚀 Deployment Architecture (Production)
+
+### AWS ECS Architecture
+
+```
+                    [Route 53]
+                        │
+                        ▼
+                  [CloudFront]
+                        │
+            ┌───────────┴───────────┐
+            │                       │
+            ▼                       ▼
+    [S3 - Static]          [ALB - Load Balancer]
+                                    │
+                        ┌───────────┴───────────┐
+                        │                       │
+                        ▼                       ▼
+                [ECS - Frontend]        [ECS - Backend]
+                (Next.js)               (NestJS)
+                                              │
+                    ┌─────────────────────────┼─────────────────┐
+                    │                         │                 │
+                    ▼                         ▼                 ▼
+            [RDS PostgreSQL]              [ElastiCache]    [Keycloak]
+            (Multi-AZ)                    (Redis)          (ECS)
+```
+
+### Escalabilidade
+
+**Horizontal Scaling**:
+- Frontend: Auto-scaling 2-10 tasks (CPU >70%)
+- Backend: Auto-scaling 2-20 tasks (CPU >70%)
+- Database: Read replicas para queries pesadas
+
+**Vertical Scaling**:
+- Database: t3.medium → t3.large (se necessário)
+
+---
+
+## ✅ Architecture Decision Records (ADRs)
+
+### ADR-001: Por que NestJS?
+- ✅ TypeScript nativo
+- ✅ Arquitetura modular
+- ✅ DI container
+- ✅ Decorators para metadata
+- ✅ Ecosystem maduro
+
+### ADR-002: Por que Next.js App Router?
+- ✅ Server Components (performance)
+- ✅ Streaming SSR
+- ✅ Built-in optimizations
+- ✅ File-based routing
+- ✅ API routes integradas
+
+### ADR-003: Por que TypeORM? ⭐ ATUALIZADO
+- ✅ TypeScript-first
+- ✅ Migrations robustas
+- ✅ Active Record + Data Mapper
+- ✅ Suporte a triggers/functions
+- ⚠️ **Alternativa considerada**: Prisma (melhor DX, mas menos controle sobre SQL)
+
+### ADR-004: Por que Prometheus + Grafana? ⭐ NOVO
+- ✅ Industry standard para observability
+- ✅ Pull-based metrics (mais resiliente)
+- ✅ Powerful query language (PromQL)
+- ✅ Rich ecosystem (exporters, alerting)
+- ✅ Grafana dashboards visuais e compartilháveis
+
+---
+
+**Documentos Relacionados**:
+- [02-REQUIREMENTS.md](./02-REQUIREMENTS.md) - Requisitos detalhados
+- [04-DATABASE-DESIGN.md](./04-DATABASE-DESIGN.md) - Schema do banco
+- [11-EXTRATA-INTEGRATION.md](./11-EXTRATA-INTEGRATION.md) - Integração completa
+- [13-OBSERVABILITY.md](./13-OBSERVABILITY.md) - Observability detalhada
+
+**Versão**: 2.0  
+**Última atualização**: 06/10/2025

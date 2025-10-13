@@ -1,0 +1,710 @@
+# 🗄️ EXTRATA ACADEMY - Database Design
+
+## 📊 Overview
+
+**Database**: PostgreSQL 17.x  
+**ORM**: TypeORM ou Prisma  
+**Naming Convention**: snake_case  
+**Primary Keys**: UUID v4  
+**Timestamps**: UTC timezone
+
+---
+
+## 📐 Schema Completo
+
+### Core Tables
+
+```sql
+-- ============================================
+-- USERS & AUTHENTICATION
+-- ============================================
+
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  keycloak_id VARCHAR(255) UNIQUE NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  avatar_url TEXT,
+  role VARCHAR(50) NOT NULL DEFAULT 'STUDENT', -- ADMIN, INSTRUCTOR, STUDENT, AUDITOR
+  municipality_id UUID, -- Referência ao Extrata
+  metadata JSONB DEFAULT '{}', -- Campos extras flexíveis
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  last_login_at TIMESTAMP,
+  is_active BOOLEAN DEFAULT true
+);
+
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_keycloak_id ON users(keycloak_id);
+CREATE INDEX idx_users_municipality ON users(municipality_id);
+CREATE INDEX idx_users_role ON users(role);
+
+-- ============================================
+-- COURSES STRUCTURE
+-- ============================================
+
+CREATE TABLE courses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title VARCHAR(255) NOT NULL,
+  slug VARCHAR(255) UNIQUE NOT NULL,
+  description TEXT NOT NULL,
+  category VARCHAR(100), -- Categoria do curso
+  difficulty_level VARCHAR(50) CHECK (difficulty_level IN ('iniciante', 'intermediario', 'avancado')),
+  estimated_hours DECIMAL(5,2), -- Carga horária estimada
+  thumbnail_url TEXT,
+  cover_image_url TEXT,
+  trailer_video_url TEXT, -- Vídeo de preview
+  status VARCHAR(50) DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'archived')),
+  is_featured BOOLEAN DEFAULT false, -- Curso em destaque
+  order_index INTEGER, -- Ordem de exibição
+  version INTEGER DEFAULT 1, -- Versionamento
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  published_at TIMESTAMP,
+  metadata JSONB DEFAULT '{}' -- Tags, keywords, etc
+);
+
+CREATE INDEX idx_courses_slug ON courses(slug);
+CREATE INDEX idx_courses_status ON courses(status);
+CREATE INDEX idx_courses_category ON courses(category);
+CREATE INDEX idx_courses_created_by ON courses(created_by);
+
+-- ============================================
+-- COURSE CONTENT
+-- ============================================
+
+CREATE TABLE modules (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  course_id UUID REFERENCES courses(id) ON DELETE CASCADE,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  order_index INTEGER NOT NULL,
+  duration_minutes INTEGER, -- Duração total do módulo
+  is_locked BOOLEAN DEFAULT false, -- Requer módulos anteriores
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_modules_course ON modules(course_id);
+CREATE INDEX idx_modules_order ON modules(course_id, order_index);
+
+CREATE TABLE lessons (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  module_id UUID REFERENCES modules(id) ON DELETE CASCADE,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  content_type VARCHAR(50) NOT NULL CHECK (content_type IN ('video', 'text', 'quiz', 'interactive')),
+  content JSONB NOT NULL, -- Estrutura flexível por tipo
+  order_index INTEGER NOT NULL,
+  duration_minutes INTEGER,
+  is_mandatory BOOLEAN DEFAULT true, -- Obrigatória para conclusão
+  is_preview BOOLEAN DEFAULT false, -- Liberada sem matrícula
+  resources JSONB DEFAULT '[]', -- Links, downloads, etc
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_lessons_module ON lessons(module_id);
+CREATE INDEX idx_lessons_order ON lessons(module_id, order_index);
+CREATE INDEX idx_lessons_type ON lessons(content_type);
+
+-- Estruturas de conteúdo (JSONB examples):
+-- 
+-- Video lesson:
+-- {
+--   "video_url": "https://cdn.example.com/video.m3u8",
+--   "duration": 600,
+--   "subtitles": [{"lang": "pt-BR", "url": "..."}],
+--   "thumbnail": "https://..."
+-- }
+--
+-- Text lesson:
+-- {
+--   "html": "<h1>Title</h1><p>Content...</p>",
+--   "reading_time": 5
+-- }
+--
+-- Quiz lesson:
+-- {
+--   "quiz_id": "uuid-here"
+-- }
+
+-- ============================================
+-- ENROLLMENTS & PROGRESS
+-- ============================================
+
+CREATE TABLE enrollments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  course_id UUID REFERENCES courses(id) ON DELETE CASCADE,
+  enrolled_at TIMESTAMP DEFAULT NOW(),
+  started_at TIMESTAMP, -- Primeira lição acessada
+  completed_at TIMESTAMP, -- Curso completo
+  progress_percentage DECIMAL(5,2) DEFAULT 0.00,
+  last_accessed_at TIMESTAMP,
+  last_lesson_id UUID REFERENCES lessons(id), -- Última lição acessada
+  is_favorite BOOLEAN DEFAULT false,
+  rating INTEGER CHECK (rating >= 1 AND rating <= 5), -- Avaliação do aluno
+  feedback TEXT, -- Comentário do aluno
+  UNIQUE(user_id, course_id)
+);
+
+CREATE INDEX idx_enrollments_user ON enrollments(user_id);
+CREATE INDEX idx_enrollments_course ON enrollments(course_id);
+CREATE INDEX idx_enrollments_progress ON enrollments(user_id, progress_percentage);
+CREATE INDEX idx_enrollments_completed ON enrollments(completed_at) WHERE completed_at IS NOT NULL;
+
+CREATE TABLE lesson_progress (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  enrollment_id UUID REFERENCES enrollments(id) ON DELETE CASCADE,
+  lesson_id UUID REFERENCES lessons(id) ON DELETE CASCADE,
+  status VARCHAR(50) DEFAULT 'not_started' CHECK (status IN ('not_started', 'in_progress', 'completed')),
+  started_at TIMESTAMP,
+  completed_at TIMESTAMP,
+  time_spent_seconds INTEGER DEFAULT 0, -- Tempo total gasto
+  last_position_seconds INTEGER, -- Para vídeos: última posição
+  attempts INTEGER DEFAULT 0, -- Para quizzes: tentativas
+  score DECIMAL(5,2), -- Para quizzes: nota
+  metadata JSONB DEFAULT '{}', -- Dados extras (ex: respostas)
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(enrollment_id, lesson_id)
+);
+
+CREATE INDEX idx_lesson_progress_enrollment ON lesson_progress(enrollment_id);
+CREATE INDEX idx_lesson_progress_lesson ON lesson_progress(lesson_id);
+CREATE INDEX idx_lesson_progress_status ON lesson_progress(status);
+
+-- ============================================
+-- QUIZZES & ASSESSMENTS
+-- ============================================
+
+CREATE TABLE quizzes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  lesson_id UUID REFERENCES lessons(id) ON DELETE CASCADE,
+  title VARCHAR(255),
+  description TEXT,
+  passing_score DECIMAL(5,2) DEFAULT 70.00, -- Nota mínima para aprovação
+  max_attempts INTEGER DEFAULT 3, -- 0 = ilimitado
+  time_limit_minutes INTEGER, -- NULL = sem limite
+  shuffle_questions BOOLEAN DEFAULT true,
+  show_correct_answers BOOLEAN DEFAULT true, -- Mostra gabarito após submissão
+  allow_review BOOLEAN DEFAULT true, -- Permite revisar antes de submeter
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_quizzes_lesson ON quizzes(lesson_id);
+
+CREATE TABLE questions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  quiz_id UUID REFERENCES quizzes(id) ON DELETE CASCADE,
+  question_text TEXT NOT NULL,
+  question_type VARCHAR(50) NOT NULL CHECK (question_type IN ('multiple_choice', 'true_false', 'essay')),
+  options JSONB, -- Array de opções para múltipla escolha
+  correct_answer JSONB NOT NULL, -- Resposta(s) correta(s)
+  explanation TEXT, -- Explicação da resposta
+  points DECIMAL(5,2) DEFAULT 1.00,
+  order_index INTEGER,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_questions_quiz ON questions(quiz_id);
+
+-- Estrutura options (JSONB):
+-- [
+--   {"id": "a", "text": "Opção A"},
+--   {"id": "b", "text": "Opção B"},
+--   {"id": "c", "text": "Opção C"},
+--   {"id": "d", "text": "Opção D"}
+-- ]
+
+CREATE TABLE quiz_attempts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  quiz_id UUID REFERENCES quizzes(id) ON DELETE CASCADE,
+  started_at TIMESTAMP DEFAULT NOW(),
+  submitted_at TIMESTAMP,
+  score DECIMAL(5,2),
+  passed BOOLEAN,
+  answers JSONB NOT NULL, -- Array de respostas do usuário
+  time_spent_seconds INTEGER,
+  attempt_number INTEGER DEFAULT 1,
+  metadata JSONB DEFAULT '{}'
+);
+
+CREATE INDEX idx_quiz_attempts_user ON quiz_attempts(user_id);
+CREATE INDEX idx_quiz_attempts_quiz ON quiz_attempts(quiz_id);
+CREATE INDEX idx_quiz_attempts_date ON quiz_attempts(started_at);
+
+-- Estrutura answers (JSONB):
+-- [
+--   {"question_id": "uuid", "answer": "a", "is_correct": true},
+--   {"question_id": "uuid", "answer": ["b", "c"], "is_correct": false}
+-- ]
+
+-- ============================================
+-- CERTIFICATES
+-- ============================================
+
+CREATE TABLE certificates (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  enrollment_id UUID REFERENCES enrollments(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  course_id UUID REFERENCES courses(id) ON DELETE CASCADE,
+  certificate_code VARCHAR(50) UNIQUE NOT NULL, -- Código de verificação público
+  issued_at TIMESTAMP DEFAULT NOW(),
+  expires_at TIMESTAMP, -- NULL = nunca expira
+  pdf_url TEXT, -- URL do PDF gerado
+  validation_url TEXT, -- URL pública de validação
+  is_valid BOOLEAN DEFAULT true,
+  revoked_at TIMESTAMP,
+  revoked_reason TEXT,
+  metadata JSONB DEFAULT '{}', -- Nome do curso, carga horária, etc (snapshot)
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_certificates_code ON certificates(certificate_code);
+CREATE INDEX idx_certificates_user ON certificates(user_id);
+CREATE INDEX idx_certificates_course ON certificates(course_id);
+CREATE INDEX idx_certificates_issued ON certificates(issued_at);
+
+-- ============================================
+-- GAMIFICATION
+-- ============================================
+
+CREATE TABLE user_xp (
+  user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  total_xp INTEGER DEFAULT 0,
+  level INTEGER DEFAULT 1,
+  current_level_xp INTEGER DEFAULT 0, -- XP dentro do nível atual
+  next_level_xp INTEGER DEFAULT 1000, -- XP necessário para próximo nível
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_user_xp_level ON user_xp(level DESC, total_xp DESC);
+
+CREATE TABLE xp_transactions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  amount INTEGER NOT NULL,
+  reason VARCHAR(100) NOT NULL, -- 'lesson_complete', 'quiz_pass', etc
+  entity_type VARCHAR(50), -- 'lesson', 'quiz', 'course'
+  entity_id UUID,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_xp_transactions_user ON xp_transactions(user_id, created_at DESC);
+
+CREATE TABLE achievements (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  code VARCHAR(100) UNIQUE NOT NULL, -- 'first_course', 'speed_runner', etc
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  icon VARCHAR(50), -- Emoji ou icon name
+  category VARCHAR(50), -- 'milestone', 'skill', 'social', etc
+  points_required INTEGER, -- Requisito (se aplicável)
+  is_active BOOLEAN DEFAULT true,
+  metadata JSONB DEFAULT '{}',
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_achievements_code ON achievements(code);
+
+CREATE TABLE user_achievements (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  achievement_id UUID REFERENCES achievements(id) ON DELETE CASCADE,
+  earned_at TIMESTAMP DEFAULT NOW(),
+  progress DECIMAL(5,2) DEFAULT 100.00, -- % de progresso (caso seja progressivo)
+  metadata JSONB DEFAULT '{}',
+  UNIQUE(user_id, achievement_id)
+);
+
+CREATE INDEX idx_user_achievements_user ON user_achievements(user_id);
+CREATE INDEX idx_user_achievements_earned ON user_achievements(earned_at);
+
+CREATE TABLE learning_streaks (
+  user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  current_streak INTEGER DEFAULT 0, -- Dias consecutivos
+  longest_streak INTEGER DEFAULT 0,
+  last_activity_date DATE,
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- ============================================
+-- ANALYTICS & TRACKING
+-- ============================================
+
+CREATE TABLE learning_analytics (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  event_type VARCHAR(100) NOT NULL, -- 'course_start', 'lesson_view', 'quiz_attempt', etc
+  entity_type VARCHAR(50), -- 'course', 'lesson', 'quiz'
+  entity_id UUID,
+  metadata JSONB DEFAULT '{}', -- Dados contextuais do evento
+  session_id UUID, -- Agrupa eventos da mesma sessão
+  ip_address INET,
+  user_agent TEXT,
+  timestamp TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_learning_analytics_user ON learning_analytics(user_id, timestamp DESC);
+CREATE INDEX idx_learning_analytics_event ON learning_analytics(event_type, timestamp DESC);
+CREATE INDEX idx_learning_analytics_entity ON learning_analytics(entity_type, entity_id);
+CREATE INDEX idx_learning_analytics_timestamp ON learning_analytics(timestamp);
+
+-- Partitioning por timestamp (performance com grande volume)
+-- CREATE TABLE learning_analytics_2025_01 PARTITION OF learning_analytics
+-- FOR VALUES FROM ('2025-01-01') TO ('2025-02-01');
+
+-- ============================================
+-- LEARNING PATHS (TRILHAS)
+-- ============================================
+
+CREATE TABLE learning_paths (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title VARCHAR(255) NOT NULL,
+  slug VARCHAR(255) UNIQUE NOT NULL,
+  description TEXT,
+  target_role VARCHAR(100), -- 'gestor', 'tecnico', 'auditor'
+  estimated_hours DECIMAL(5,2),
+  thumbnail_url TEXT,
+  is_featured BOOLEAN DEFAULT false,
+  order_index INTEGER,
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_learning_paths_slug ON learning_paths(slug);
+CREATE INDEX idx_learning_paths_role ON learning_paths(target_role);
+
+CREATE TABLE learning_path_courses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  learning_path_id UUID REFERENCES learning_paths(id) ON DELETE CASCADE,
+  course_id UUID REFERENCES courses(id) ON DELETE CASCADE,
+  order_index INTEGER NOT NULL,
+  is_required BOOLEAN DEFAULT true,
+  UNIQUE(learning_path_id, course_id)
+);
+
+CREATE INDEX idx_path_courses_path ON learning_path_courses(learning_path_id, order_index);
+
+CREATE TABLE learning_path_enrollments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  learning_path_id UUID REFERENCES learning_paths(id) ON DELETE CASCADE,
+  enrolled_at TIMESTAMP DEFAULT NOW(),
+  completed_at TIMESTAMP,
+  progress_percentage DECIMAL(5,2) DEFAULT 0.00,
+  UNIQUE(user_id, learning_path_id)
+);
+
+CREATE INDEX idx_path_enrollments_user ON learning_path_enrollments(user_id);
+
+-- ============================================
+-- NOTIFICATIONS & COMMUNICATIONS
+-- ============================================
+
+CREATE TABLE notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  type VARCHAR(50) NOT NULL, -- 'course_complete', 'certificate_issued', 'level_up', etc
+  title VARCHAR(255) NOT NULL,
+  message TEXT,
+  data JSONB DEFAULT '{}', -- Dados extras (links, IDs, etc)
+  is_read BOOLEAN DEFAULT false,
+  read_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_notifications_user ON notifications(user_id, created_at DESC);
+CREATE INDEX idx_notifications_unread ON notifications(user_id) WHERE is_read = false;
+
+-- ============================================
+-- CONTENT VERSIONING
+-- ============================================
+
+CREATE TABLE course_versions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  course_id UUID REFERENCES courses(id) ON DELETE CASCADE,
+  version INTEGER NOT NULL,
+  snapshot JSONB NOT NULL, -- Snapshot completo do curso
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(course_id, version)
+);
+
+CREATE INDEX idx_course_versions_course ON course_versions(course_id, version DESC);
+
+-- ============================================
+-- TRIGGERS & FUNCTIONS
+-- ============================================
+
+-- Atualizar updated_at automaticamente
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_courses_updated_at BEFORE UPDATE ON courses
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_modules_updated_at BEFORE UPDATE ON modules
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_lessons_updated_at BEFORE UPDATE ON lessons
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Calcular progresso do curso automaticamente
+CREATE OR REPLACE FUNCTION calculate_course_progress()
+RETURNS TRIGGER AS $$
+DECLARE
+  total_lessons INTEGER;
+  completed_lessons INTEGER;
+  new_progress DECIMAL(5,2);
+BEGIN
+  -- Conta lições obrigatórias
+  SELECT COUNT(*) INTO total_lessons
+  FROM lessons l
+  JOIN modules m ON l.module_id = m.id
+  WHERE m.course_id = (
+    SELECT e.course_id FROM enrollments e WHERE e.id = NEW.enrollment_id
+  ) AND l.is_mandatory = true;
+
+  -- Conta lições completadas
+  SELECT COUNT(*) INTO completed_lessons
+  FROM lesson_progress lp
+  WHERE lp.enrollment_id = NEW.enrollment_id
+    AND lp.status = 'completed';
+
+  -- Calcula novo progresso
+  IF total_lessons > 0 THEN
+    new_progress := (completed_lessons::DECIMAL / total_lessons) * 100;
+  ELSE
+    new_progress := 0;
+  END IF;
+
+  -- Atualiza enrollment
+  UPDATE enrollments
+  SET 
+    progress_percentage = new_progress,
+    completed_at = CASE WHEN new_progress >= 100 THEN NOW() ELSE NULL END
+  WHERE id = NEW.enrollment_id;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_calculate_progress
+AFTER INSERT OR UPDATE ON lesson_progress
+FOR EACH ROW EXECUTE FUNCTION calculate_course_progress();
+
+-- Atualizar streak de aprendizado
+CREATE OR REPLACE FUNCTION update_learning_streak()
+RETURNS TRIGGER AS $$
+DECLARE
+  last_date DATE;
+  current_date DATE := CURRENT_DATE;
+BEGIN
+  -- Busca última atividade
+  SELECT last_activity_date INTO last_date
+  FROM learning_streaks
+  WHERE user_id = NEW.user_id;
+
+  IF last_date IS NULL THEN
+    -- Primeira atividade
+    INSERT INTO learning_streaks (user_id, current_streak, longest_streak, last_activity_date)
+    VALUES (NEW.user_id, 1, 1, current_date);
+  ELSIF last_date = current_date THEN
+    -- Já teve atividade hoje, nada a fazer
+    RETURN NEW;
+  ELSIF last_date = current_date - INTERVAL '1 day' THEN
+    -- Dia consecutivo, incrementa streak
+    UPDATE learning_streaks
+    SET 
+      current_streak = current_streak + 1,
+      longest_streak = GREATEST(longest_streak, current_streak + 1),
+      last_activity_date = current_date
+    WHERE user_id = NEW.user_id;
+  ELSE
+    -- Quebrou a sequência, reseta
+    UPDATE learning_streaks
+    SET 
+      current_streak = 1,
+      last_activity_date = current_date
+    WHERE user_id = NEW.user_id;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_update_streak
+AFTER INSERT ON lesson_progress
+FOR EACH ROW
+WHEN (NEW.status = 'completed')
+EXECUTE FUNCTION update_learning_streak();
+```
+
+---
+
+## 🔄 Migrations Strategy
+
+### Usando TypeORM
+
+```typescript
+// migrations/1730000000000-InitialSchema.ts
+import { MigrationInterface, QueryRunner } from "typeorm";
+
+export class InitialSchema1730000000000 implements MigrationInterface {
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    // Create users table
+    await queryRunner.query(`
+      CREATE TABLE users (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        keycloak_id VARCHAR(255) UNIQUE NOT NULL,
+        ...
+      );
+    `);
+    
+    // Add indexes
+    await queryRunner.query(`
+      CREATE INDEX idx_users_email ON users(email);
+    `);
+    
+    // ... rest of schema
+  }
+
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`DROP TABLE IF EXISTS users CASCADE;`);
+  }
+}
+```
+
+### Gerar nova migration
+
+```bash
+npm run typeorm migration:generate -- -n AddQuizzesTable
+npm run typeorm migration:run
+npm run typeorm migration:revert # rollback
+```
+
+---
+
+## 🌱 Seed Data
+
+```typescript
+// seeds/01-users.seed.ts
+export const seedUsers = async (dataSource: DataSource) => {
+  const usersRepo = dataSource.getRepository(User);
+
+  const admin = usersRepo.create({
+    keycloak_id: 'admin-keycloak-id',
+    email: 'admin@extrata.gov.br',
+    name: 'Admin Extrata',
+    role: 'ADMIN',
+  });
+
+  await usersRepo.save(admin);
+};
+
+// seeds/02-courses.seed.ts
+export const seedCourses = async (dataSource: DataSource) => {
+  const coursesRepo = dataSource.getRepository(Course);
+
+  const course = coursesRepo.create({
+    title: 'Introdução ao Extrata',
+    slug: 'introducao-ao-extrata',
+    description: 'Aprenda o básico do sistema Extrata',
+    category: 'Fundamentos',
+    difficulty_level: 'iniciante',
+    estimated_hours: 2,
+    status: 'published',
+  });
+
+  await coursesRepo.save(course);
+};
+```
+
+---
+
+## 📊 Queries Importantes
+
+### Top 10 cursos mais populares
+
+```sql
+SELECT 
+  c.id,
+  c.title,
+  COUNT(e.id) as total_enrollments,
+  AVG(e.progress_percentage) as avg_progress,
+  COUNT(CASE WHEN e.completed_at IS NOT NULL THEN 1 END) as completions
+FROM courses c
+LEFT JOIN enrollments e ON c.id = e.course_id
+WHERE c.status = 'published'
+GROUP BY c.id, c.title
+ORDER BY total_enrollments DESC
+LIMIT 10;
+```
+
+### Progresso de um usuário
+
+```sql
+SELECT 
+  c.title as course,
+  e.progress_percentage,
+  e.enrolled_at,
+  e.completed_at,
+  COUNT(lp.id) as lessons_completed,
+  MAX(lp.completed_at) as last_activity
+FROM enrollments e
+JOIN courses c ON e.course_id = c.id
+LEFT JOIN lesson_progress lp ON e.id = lp.enrollment_id AND lp.status = 'completed'
+WHERE e.user_id = $1
+GROUP BY c.id, c.title, e.progress_percentage, e.enrolled_at, e.completed_at
+ORDER BY e.enrolled_at DESC;
+```
+
+### Leaderboard global
+
+```sql
+SELECT 
+  u.id,
+  u.name,
+  u.avatar_url,
+  ux.total_xp,
+  ux.level,
+  COUNT(DISTINCT ua.id) as badges_count,
+  ROW_NUMBER() OVER (ORDER BY ux.total_xp DESC) as rank
+FROM users u
+JOIN user_xp ux ON u.id = ux.user_id
+LEFT JOIN user_achievements ua ON u.id = ua.user_id
+WHERE u.is_active = true
+GROUP BY u.id, u.name, u.avatar_url, ux.total_xp, ux.level
+ORDER BY ux.total_xp DESC
+LIMIT 100;
+```
+
+---
+
+## 🔒 Security Considerations
+
+1. **Row Level Security (RLS)**: Considerar para multi-tenancy
+2. **Prepared Statements**: Sempre usar (TypeORM já faz)
+3. **Encryption**: Dados sensíveis em rest (pgcrypto)
+4. **Audit Log**: Tabela separada para auditoria
+5. **Backups**: Daily automático + point-in-time recovery
+
+---
+
+**Próximo documento**: [05-API-SPECIFICATION.md](./05-API-SPECIFICATION.md)

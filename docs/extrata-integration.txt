@@ -1,0 +1,785 @@
+# 🔗 EXTRATA ACADEMY - Integração com Sistema Extrata
+
+## 📋 Overview
+
+Este documento especifica como o **Extrata Academy** se integra ao **sistema Extrata** (plataforma principal de gestão governamental), garantindo:
+
+- ✅ **Single Sign-On (SSO)** - Um login para ambos os sistemas
+- ✅ **Sincronização de dados** - Usuários, municípios, roles
+- ✅ **Context sharing** - Navegação fluida entre sistemas
+- ✅ **Webhooks** - Eventos em tempo real
+- ✅ **Deep linking** - Links diretos entre plataformas
+
+---
+
+## 🏗️ Arquitetura de Integração
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    EXTRATA MAIN SYSTEM                  │
+│  ┌────────────┐  ┌────────────┐  ┌────────────┐       │
+│  │ Propostas  │  │ Municípios │  │  Usuários  │       │
+│  │   Module   │  │   Module   │  │   Module   │       │
+│  └──────┬─────┘  └──────┬─────┘  └──────┬─────┘       │
+│         │                │                │             │
+└─────────┼────────────────┼────────────────┼─────────────┘
+          │                │                │
+          │  REST APIs     │  GraphQL       │  Webhooks
+          │                │                │
+┌─────────▼────────────────▼────────────────▼─────────────┐
+│              INTEGRATION LAYER (API Gateway)            │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │  - Authentication (Keycloak)                     │  │
+│  │  - Rate Limiting                                 │  │
+│  │  - Request/Response Transformation               │  │
+│  │  - Caching (Redis)                               │  │
+│  │  - Error Handling & Retry Logic                  │  │
+│  └──────────────────────────────────────────────────┘  │
+└─────────────────────────────────┬───────────────────────┘
+                                  │
+                                  │
+┌─────────────────────────────────▼───────────────────────┐
+│                  EXTRATA ACADEMY LMS                    │
+│  ┌────────────┐  ┌────────────┐  ┌────────────┐       │
+│  │  Courses   │  │   Users    │  │ Analytics  │       │
+│  │   Module   │  │   Module   │  │   Module   │       │
+│  └────────────┘  └────────────┘  └────────────┘       │
+└─────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🔐 Single Sign-On (SSO)
+
+### Fluxo de Autenticação
+
+```
+User                    Extrata Academy           Keycloak              Extrata Main
+  │                            │                      │                      │
+  │  1. Acessa Academy        │                      │                      │
+  ├───────────────────────────>│                      │                      │
+  │                            │                      │                      │
+  │  2. Redireciona para SSO  │                      │                      │
+  │<───────────────────────────┤                      │                      │
+  │                            │                      │                      │
+  │  3. Login (se necessário)  │                      │                      │
+  ├────────────────────────────┼─────────────────────>│                      │
+  │                            │                      │                      │
+  │  4. Autoriza Academy       │                      │                      │
+  │<───────────────────────────┼──────────────────────┤                      │
+  │                            │                      │                      │
+  │  5. Callback com code      │                      │                      │
+  ├───────────────────────────>│                      │                      │
+  │                            │  6. Troca code por   │                      │
+  │                            │     access_token     │                      │
+  │                            ├─────────────────────>│                      │
+  │                            │                      │                      │
+  │                            │  7. Retorna tokens + │                      │
+  │                            │     user info        │                      │
+  │                            │<─────────────────────┤                      │
+  │                            │                      │                      │
+  │                            │  8. Busca dados      │                      │
+  │                            │     adicionais       │                      │
+  │                            ├──────────────────────┼─────────────────────>│
+  │                            │                      │  9. Retorna user     │
+  │                            │<─────────────────────┼──────────────────────┤
+  │                            │                      │                      │
+  │  10. Cria sessão Academy   │                      │                      │
+  │<───────────────────────────┤                      │                      │
+  │                            │                      │                      │
+```
+
+### Implementação do SSO
+
+#### Backend (NestJS)
+
+```typescript
+// src/auth/auth.controller.ts
+@Controller('auth')
+export class AuthController {
+  constructor(private readonly authService: AuthService) {}
+
+  @Get('login')
+  login(@Res() res: Response) {
+    const keycloakAuthUrl = this.authService.getKeycloakAuthUrl();
+    return res.redirect(keycloakAuthUrl);
+  }
+
+  @Get('callback')
+  async callback(
+    @Query('code') code: string,
+    @Res() res: Response,
+  ) {
+    try {
+      // 1. Trocar code por tokens
+      const tokens = await this.authService.exchangeCodeForTokens(code);
+      
+      // 2. Decodificar token e extrair user info
+      const userInfo = await this.authService.getUserInfo(tokens.access_token);
+      
+      // 3. Buscar dados adicionais do Extrata Main
+      const extraData = await this.authService.fetchExtrataUserData(userInfo.sub);
+      
+      // 4. Sincronizar/criar usuário local
+      const user = await this.authService.syncUser({
+        keycloak_id: userInfo.sub,
+        email: userInfo.email,
+        name: userInfo.name,
+        role: this.authService.mapRole(userInfo.realm_access?.roles),
+        municipality_id: extraData.municipality_id,
+        metadata: extraData.metadata,
+      });
+      
+      // 5. Criar sessão Academy
+      const sessionToken = await this.authService.createSession(user);
+      
+      // 6. Redirecionar para dashboard
+      res.cookie('academy_session', sessionToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
+      });
+      
+      return res.redirect('/dashboard');
+    } catch (error) {
+      return res.redirect('/error?message=auth_failed');
+    }
+  }
+
+  @Post('refresh')
+  async refresh(@Body('refresh_token') refreshToken: string) {
+    const newTokens = await this.authService.refreshTokens(refreshToken);
+    return newTokens;
+  }
+
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  async logout(
+    @CurrentUser() user: User,
+    @Res() res: Response,
+  ) {
+    await this.authService.revokeSession(user.id);
+    
+    // Logout do Keycloak também
+    const logoutUrl = await this.authService.getKeycloakLogoutUrl();
+    
+    res.clearCookie('academy_session');
+    return res.redirect(logoutUrl);
+  }
+}
+```
+
+#### Frontend (Next.js)
+
+```typescript
+// src/lib/auth.ts
+export async function login() {
+  // Redireciona para backend que inicia OAuth flow
+  window.location.href = '/api/auth/login';
+}
+
+export async function logout() {
+  await fetch('/api/auth/logout', { method: 'POST' });
+  window.location.href = '/';
+}
+
+// src/middleware.ts - Proteção de rotas
+export function middleware(request: NextRequest) {
+  const session = request.cookies.get('academy_session');
+  
+  if (!session && request.nextUrl.pathname.startsWith('/dashboard')) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+  
+  return NextResponse.next();
+}
+```
+
+### Mapeamento de Roles
+
+```typescript
+// src/auth/role-mapper.ts
+export class RoleMapper {
+  private static readonly ROLE_MAPPING = {
+    // Roles do Keycloak → Roles do Academy
+    'extrata_admin': 'ADMIN',
+    'extrata_gestor': 'INSTRUCTOR',
+    'extrata_usuario': 'STUDENT',
+    'extrata_auditor': 'AUDITOR',
+  };
+
+  static mapKeycloakRolesToAcademy(keycloakRoles: string[]): string {
+    // Prioridade: ADMIN > INSTRUCTOR > AUDITOR > STUDENT
+    if (keycloakRoles.includes('extrata_admin')) return 'ADMIN';
+    if (keycloakRoles.includes('extrata_gestor')) return 'INSTRUCTOR';
+    if (keycloakRoles.includes('extrata_auditor')) return 'AUDITOR';
+    return 'STUDENT';
+  }
+}
+```
+
+---
+
+## 📡 APIs do Extrata Main
+
+### Endpoints Consumidos
+
+#### 1. GET /api/v1/users/:keycloak_id
+
+**Descrição**: Buscar dados completos do usuário
+
+**Headers**:
+```
+Authorization: Bearer {service_account_token}
+X-API-Key: {extrata_api_key}
+```
+
+**Response**:
+```json
+{
+  "id": "uuid",
+  "keycloak_id": "uuid",
+  "email": "user@example.com",
+  "name": "User Name",
+  "cpf": "123.456.789-00",
+  "municipality": {
+    "id": "uuid",
+    "name": "São Paulo",
+    "ibge_code": "3550308",
+    "uf": "SP"
+  },
+  "role": "gestor",
+  "department": "Secretaria de Planejamento",
+  "phone": "+55 11 98765-4321",
+  "created_at": "2024-01-15T10:00:00Z",
+  "metadata": {
+    "onboarding_completed": true,
+    "preferred_language": "pt-BR"
+  }
+}
+```
+
+#### 2. GET /api/v1/municipalities
+
+**Descrição**: Listar municípios no sistema
+
+**Response**:
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "name": "São Paulo",
+      "ibge_code": "3550308",
+      "uf": "SP",
+      "population": 12000000,
+      "region": "Sudeste"
+    }
+  ],
+  "total": 165,
+  "page": 1,
+  "limit": 50
+}
+```
+
+#### 3. POST /api/v1/events (Webhook receiver)
+
+**Descrição**: Extrata Main envia eventos para Academy
+
+**Payload**:
+```json
+{
+  "event_type": "user.created" | "user.updated" | "user.deleted" | "municipality.created",
+  "timestamp": "2025-01-15T10:00:00Z",
+  "data": {
+    "user_id": "uuid",
+    "changes": {
+      "role": "gestor",
+      "municipality_id": "new-uuid"
+    }
+  },
+  "signature": "hmac-sha256-signature"
+}
+```
+
+### Service Account Authentication
+
+```typescript
+// src/integration/extrata-client.ts
+export class ExtrataApiClient {
+  private accessToken: string;
+  private tokenExpiresAt: Date;
+
+  async authenticate() {
+    const response = await fetch(`${EXTRATA_API_URL}/oauth/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'client_credentials',
+        client_id: process.env.EXTRATA_CLIENT_ID,
+        client_secret: process.env.EXTRATA_CLIENT_SECRET,
+        scope: 'read:users read:municipalities',
+      }),
+    });
+
+    const data = await response.json();
+    this.accessToken = data.access_token;
+    this.tokenExpiresAt = new Date(Date.now() + data.expires_in * 1000);
+  }
+
+  async getUser(keycloakId: string) {
+    await this.ensureAuthenticated();
+    
+    const response = await fetch(`${EXTRATA_API_URL}/api/v1/users/${keycloakId}`, {
+      headers: {
+        'Authorization': `Bearer ${this.accessToken}`,
+        'X-API-Key': process.env.EXTRATA_API_KEY,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch user: ${response.status}`);
+    }
+
+    return response.json();
+  }
+
+  private async ensureAuthenticated() {
+    if (!this.accessToken || this.tokenExpiresAt < new Date()) {
+      await this.authenticate();
+    }
+  }
+}
+```
+
+---
+
+## 🔔 Webhooks
+
+### Eventos Enviados pelo Extrata
+
+```typescript
+// src/integration/webhook-handler.ts
+export enum WebhookEventType {
+  USER_CREATED = 'user.created',
+  USER_UPDATED = 'user.updated',
+  USER_DELETED = 'user.deleted',
+  MUNICIPALITY_CREATED = 'municipality.created',
+  MUNICIPALITY_UPDATED = 'municipality.updated',
+}
+
+@Controller('webhooks')
+export class WebhookController {
+  @Post('extrata')
+  async handleExtrataWebhook(
+    @Body() payload: WebhookPayload,
+    @Headers('x-extrata-signature') signature: string,
+  ) {
+    // 1. Validar assinatura
+    if (!this.validateSignature(payload, signature)) {
+      throw new UnauthorizedException('Invalid webhook signature');
+    }
+
+    // 2. Processar evento
+    try {
+      await this.processWebhookEvent(payload);
+      return { success: true };
+    } catch (error) {
+      // Extrata vai retentar se retornarmos erro
+      throw new InternalServerErrorException('Failed to process webhook');
+    }
+  }
+
+  private validateSignature(payload: any, signature: string): boolean {
+    const hmac = crypto.createHmac('sha256', process.env.WEBHOOK_SECRET);
+    hmac.update(JSON.stringify(payload));
+    const expectedSignature = hmac.digest('hex');
+    return crypto.timingSafeEqual(
+      Buffer.from(signature),
+      Buffer.from(expectedSignature),
+    );
+  }
+
+  private async processWebhookEvent(payload: WebhookPayload) {
+    switch (payload.event_type) {
+      case WebhookEventType.USER_CREATED:
+      case WebhookEventType.USER_UPDATED:
+        await this.syncUserFromExtrata(payload.data.user_id);
+        break;
+        
+      case WebhookEventType.USER_DELETED:
+        await this.softDeleteUser(payload.data.user_id);
+        break;
+        
+      case WebhookEventType.MUNICIPALITY_CREATED:
+      case WebhookEventType.MUNICIPALITY_UPDATED:
+        await this.syncMunicipality(payload.data.municipality_id);
+        break;
+    }
+  }
+}
+```
+
+### Retry Logic
+
+```typescript
+// src/integration/webhook-retry.ts
+export class WebhookRetryService {
+  async processWithRetry(payload: WebhookPayload, maxRetries = 3) {
+    let attempt = 0;
+    
+    while (attempt < maxRetries) {
+      try {
+        await this.processWebhookEvent(payload);
+        return;
+      } catch (error) {
+        attempt++;
+        
+        if (attempt >= maxRetries) {
+          // Log erro e notifica equipe
+          await this.logFailedWebhook(payload, error);
+          await this.notifyTeam(payload, error);
+          throw error;
+        }
+        
+        // Exponential backoff: 1s, 2s, 4s
+        const delay = Math.pow(2, attempt) * 1000;
+        await this.sleep(delay);
+      }
+    }
+  }
+}
+```
+
+---
+
+## 🔗 Deep Linking
+
+### Links do Extrata → Academy
+
+```typescript
+// Extrata Main pode criar links diretos para Academy
+const academyLinks = {
+  // Link para curso específico
+  courseLink: (courseId: string) => 
+    `https://academy.extrata.gov.br/courses/${courseId}`,
+  
+  // Link para curso com matrícula automática
+  enrollLink: (courseId: string, userId: string) => 
+    `https://academy.extrata.gov.br/enroll/${courseId}?user=${userId}&token=${generateToken()}`,
+  
+  // Link para dashboard de treinamento do município
+  municipalityDashboard: (municipalityId: string) =>
+    `https://academy.extrata.gov.br/admin/municipalities/${municipalityId}`,
+};
+```
+
+### Links do Academy → Extrata
+
+```typescript
+// Academy pode criar links de volta para Extrata
+const extraLinks = {
+  // Link para perfil do usuário no Extrata
+  userProfile: (userId: string) =>
+    `https://extrata.gov.br/profile/${userId}`,
+  
+  // Link para proposta relacionada ao curso
+  proposalLink: (proposalId: string) =>
+    `https://extrata.gov.br/proposals/${proposalId}`,
+  
+  // Link para dashboard principal
+  mainDashboard: () =>
+    `https://extrata.gov.br/dashboard`,
+};
+```
+
+### Context Sharing
+
+```typescript
+// src/components/ExtrataNavigation.tsx
+export function ExtrataNavigation() {
+  const { user } = useAuth();
+  
+  return (
+    <nav>
+      <a href="https://extrata.gov.br/dashboard">
+        ← Voltar para Extrata
+      </a>
+      
+      {/* Mostrar informações compartilhadas */}
+      <div>
+        <span>{user.municipality.name}</span>
+        <span>{user.name}</span>
+      </div>
+    </nav>
+  );
+}
+```
+
+---
+
+## 🔄 Sincronização de Dados
+
+### Estratégias de Sync
+
+#### 1. Real-time (via Webhooks)
+- **Uso**: Dados críticos (usuários, roles)
+- **Latência**: < 1 segundo
+- **Implementação**: Webhooks do Extrata → Academy
+
+#### 2. Near Real-time (via Polling)
+- **Uso**: Dados menos críticos (municípios)
+- **Latência**: 5-15 minutos
+- **Implementação**: Cron job busca mudanças
+
+#### 3. Batch (Scheduled)
+- **Uso**: Analytics, relatórios
+- **Latência**: 24 horas
+- **Implementação**: Job noturno
+
+### Implementação de Sync Service
+
+```typescript
+// src/integration/sync.service.ts
+@Injectable()
+export class SyncService {
+  constructor(
+    private extratoClient: ExtrataApiClient,
+    private usersRepo: UsersRepository,
+  ) {}
+
+  // Sincronização manual de um usuário
+  async syncUser(keycloakId: string) {
+    const extraData = await this.extratoClient.getUser(keycloakId);
+    
+    await this.usersRepo.upsert({
+      keycloak_id: extraData.keycloak_id,
+      email: extraData.email,
+      name: extraData.name,
+      municipality_id: extraData.municipality.id,
+      metadata: extraData.metadata,
+      synced_at: new Date(),
+    });
+  }
+
+  // Sincronização em batch (cron)
+  @Cron('0 */15 * * * *') // A cada 15 minutos
+  async syncRecentlyUpdatedUsers() {
+    const since = new Date(Date.now() - 15 * 60 * 1000); // últimos 15min
+    
+    const updatedUsers = await this.extratoClient.getUpdatedUsers(since);
+    
+    for (const user of updatedUsers) {
+      await this.syncUser(user.keycloak_id);
+    }
+  }
+}
+```
+
+---
+
+## 🛡️ Error Handling
+
+### Fallback Strategies
+
+```typescript
+// src/integration/fallback.service.ts
+export class IntegrationFallbackService {
+  async getUserWithFallback(keycloakId: string): Promise<User> {
+    try {
+      // 1. Tentar buscar do Extrata Main
+      return await this.extratoClient.getUser(keycloakId);
+    } catch (error) {
+      // 2. Se falhar, usar dados em cache
+      const cachedUser = await this.cache.get(`user:${keycloakId}`);
+      if (cachedUser) {
+        this.logger.warn(`Using cached user data for ${keycloakId}`);
+        return cachedUser;
+      }
+      
+      // 3. Se não tiver cache, usar dados básicos do Keycloak
+      const keycloakUser = await this.keycloak.getUser(keycloakId);
+      return this.mapKeycloakToUser(keycloakUser);
+    }
+  }
+}
+```
+
+### Circuit Breaker
+
+```typescript
+// src/integration/circuit-breaker.ts
+export class CircuitBreaker {
+  private failures = 0;
+  private lastFailureTime: Date;
+  private state: 'CLOSED' | 'OPEN' | 'HALF_OPEN' = 'CLOSED';
+
+  async execute<T>(fn: () => Promise<T>): Promise<T> {
+    if (this.state === 'OPEN') {
+      // Se passou tempo suficiente, tenta novamente
+      if (Date.now() - this.lastFailureTime.getTime() > 60000) {
+        this.state = 'HALF_OPEN';
+      } else {
+        throw new Error('Circuit breaker is OPEN');
+      }
+    }
+
+    try {
+      const result = await fn();
+      
+      // Reset em caso de sucesso
+      if (this.state === 'HALF_OPEN') {
+        this.state = 'CLOSED';
+        this.failures = 0;
+      }
+      
+      return result;
+    } catch (error) {
+      this.failures++;
+      this.lastFailureTime = new Date();
+      
+      // Abre circuito após 5 falhas
+      if (this.failures >= 5) {
+        this.state = 'OPEN';
+      }
+      
+      throw error;
+    }
+  }
+}
+```
+
+---
+
+## 📊 Monitoring da Integração
+
+### Métricas Importantes
+
+```typescript
+// src/integration/metrics.ts
+export class IntegrationMetrics {
+  // Latência das chamadas ao Extrata API
+  @Histogram({ name: 'extrata_api_duration_seconds' })
+  apiLatency: Histogram;
+
+  // Taxa de sucesso/erro
+  @Counter({ name: 'extrata_api_requests_total', labelNames: ['status'] })
+  apiRequests: Counter;
+
+  // Webhooks recebidos
+  @Counter({ name: 'webhooks_received_total', labelNames: ['event_type'] })
+  webhooksReceived: Counter;
+
+  // Sync lag (diferença entre Academy e Extrata)
+  @Gauge({ name: 'sync_lag_seconds' })
+  syncLag: Gauge;
+}
+```
+
+### Alertas
+
+```yaml
+# prometheus/alerts.yml
+groups:
+  - name: extrata_integration
+    interval: 30s
+    rules:
+      - alert: ExtrataAPIHighLatency
+        expr: histogram_quantile(0.95, extrata_api_duration_seconds) > 2
+        for: 5m
+        annotations:
+          summary: "Extrata API está lento"
+          
+      - alert: ExtrataAPIHighErrorRate
+        expr: rate(extrata_api_requests_total{status="error"}[5m]) > 0.05
+        for: 2m
+        annotations:
+          summary: "Taxa de erro alta na integração com Extrata"
+          
+      - alert: WebhookProcessingFailed
+        expr: rate(webhooks_failed_total[5m]) > 0
+        annotations:
+          summary: "Webhooks falhando ao processar"
+```
+
+---
+
+## ✅ Checklist de Integração
+
+### Pré-requisitos
+- [ ] Credenciais do Extrata API recebidas
+- [ ] Keycloak configurado com realm do Extrata
+- [ ] Webhook endpoint exposto e acessível
+- [ ] Secrets manager configurado
+- [ ] Service account criado
+
+### Desenvolvimento
+- [ ] SSO flow implementado e testado
+- [ ] API client do Extrata funcionando
+- [ ] Webhook handler implementado
+- [ ] Sincronização de usuários funcionando
+- [ ] Deep links testados
+- [ ] Fallbacks implementados
+- [ ] Circuit breaker configurado
+
+### Testing
+- [ ] Testes de integração com mock do Extrata
+- [ ] Testes E2E de SSO
+- [ ] Testes de webhook com payloads reais
+- [ ] Testes de failover
+- [ ] Load testing da integração
+
+### Production
+- [ ] Rate limiting configurado
+- [ ] Monitoring e alertas ativos
+- [ ] Logs estruturados
+- [ ] Documentação de troubleshooting
+- [ ] Runbook de incidentes
+
+---
+
+## 🔧 Troubleshooting
+
+### Problema: SSO falha
+
+```bash
+# Verificar se Keycloak está acessível
+curl https://keycloak.extrata.gov.br/health
+
+# Ver logs de auth
+kubectl logs -f deployment/academy-backend | grep "auth"
+
+# Validar token JWT
+jwt-cli decode $TOKEN
+```
+
+### Problema: Webhooks não chegam
+
+```bash
+# Verificar conectividade
+curl -X POST https://academy.extrata.gov.br/webhooks/extrata \
+  -H "Content-Type: application/json" \
+  -d '{"test": true}'
+
+# Ver logs de webhook
+kubectl logs -f deployment/academy-backend | grep "webhook"
+
+# Verificar fila de retry
+redis-cli lrange "webhooks:retry" 0 -1
+```
+
+### Problema: Dados desatualizados
+
+```bash
+# Forçar sync manual
+curl -X POST http://localhost:4000/admin/sync/users \
+  -H "Authorization: Bearer $ADMIN_TOKEN"
+
+# Verificar última sincronização
+psql -c "SELECT keycloak_id, name, synced_at FROM users ORDER BY synced_at DESC LIMIT 10;"
+```
+
+---
+
+**Próximo documento**: [12-COMPLIANCE-LGPD.md](./12-COMPLIANCE-LGPD.md)

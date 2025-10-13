@@ -1,0 +1,133 @@
+# 📁 EXTRATA ACADEMY - Estrutura do Projeto
+
+## 🏗️ Estrutura de Diretórios
+
+```
+extrata-academy/
+├── docs/                                 # 📚 Documentação completa
+│   ├── 00-PROJECT-STRUCTURE.md          # Este arquivo
+│   ├── 01-EXECUTIVE-SUMMARY.md          # Visão executiva
+│   ├── 02-REQUIREMENTS.md               # Requisitos funcionais e não-funcionais
+│   ├── 03-ARCHITECTURE.md               # Arquitetura técnica detalhada
+│   ├── 04-DATABASE-DESIGN.md            # Design do banco de dados
+│   ├── 05-API-SPECIFICATION.md          # Especificação da API REST
+│   ├── 06-FRONTEND-DESIGN.md            # Design e UX do frontend
+│   ├── 07-DEVELOPMENT-GUIDE.md          # Guia de desenvolvimento
+│   ├── 08-TESTING-STRATEGY.md           # Estratégia de testes
+│   ├── 09-DEPLOYMENT-GUIDE.md           # Guia de deployment
+│   ├── 10-IMPLEMENTATION-ROADMAP.md     # Roadmap de implementação
+│   └── assets/                          # Diagramas, wireframes, etc
+│       ├── diagrams/
+│       ├── wireframes/
+│       └── screenshots/
+│
+├── backend/                              # 🔧 API NestJS
+│   ├── src/
+│   │   ├── main.ts
+│   │   ├── app.module.ts
+│   │   ├── config/                      # Configurações
+│   │   ├── common/                      # Utilitários compartilhados
+│   │   │   ├── decorators/
+│   │   │   ├── filters/
+│   │   │   ├── guards/
+│   │   │   ├── interceptors/
+│   │   │   └── pipes/
+│   │   ├── auth/                        # Autenticação (Keycloak)
+│   │   ├── users/                       # Módulo de usuários
+│   │   ├── courses/                     # Módulo de cursos
+│   │   ├── enrollments/                 # Módulo de matrículas
+│   │   ├── progress/                    # Módulo de progresso
+│   │   ├── quizzes/                     # Módulo de avaliações
+│   │   ├── certificates/                # Módulo de certificados
+│   │   ├── gamification/                # Módulo de gamificação
+│   │   ├── analytics/                   # Módulo de analytics
+│   │   └── integration/                 # Integrações externas
+│   ├── test/
+│   ├── prisma/                          # Schema Prisma
+│   ├── docker/
+│   ├── .env.example
+│   ├── package.json
+│   └── tsconfig.json
+│
+├── frontend/                             # 🎨 Next.js App
+│   ├── src/
+│   │   ├── app/                         # App Router
+│   │   │   ├── layout.tsx
+│   │   │   ├── page.tsx
+│   │   │   ├── (auth)/
+│   │   │   │   ├── login/
+│   │   │   │   └── register/
+│   │   │   └── (platform)/
+│   │   │       ├── dashboard/
+│   │   │       ├── courses/
+│   │   │       ├── my-learning/
+│   │   │       ├── certificates/
+│   │   │       └── profile/
+│   │   ├── components/
+│   │   │   ├── ui/
+│   │   │   ├── academy/
+│   │   │   └── shared/
+│   │   ├── lib/
+│   │   ├── styles/
+│   │   └── types/
+│   ├── public/
+│   └── package.json
+│
+├── shared/                               # 📦 Código compartilhado
+│   ├── types/
+│   └── constants/
+│
+├── infrastructure/                       # 🚀 Infra
+│   ├── docker/
+│   │   ├── docker-compose.yml
+│   │   ├── docker-compose.prod.yml
+│   │   └── nginx.conf
+│   └── kubernetes/
+│
+├── scripts/                              # 🔨 Scripts
+│   ├── setup-dev.sh
+│   ├── seed-database.ts
+│   └── backup-db.sh
+│
+├── .github/workflows/                    # CI/CD
+├── .gitignore
+├── README.md
+└── LICENSE
+```
+
+## 📝 Convenções
+
+### Arquivos
+- Documentação: `NN-TOPIC-NAME.md`
+- Componentes: `PascalCase.tsx`
+- Utilitários: `camelCase.ts`
+- Testes: `*.spec.ts`
+
+### Código
+- Variáveis: `camelCase`
+- Classes: `PascalCase`
+- Constantes: `UPPER_SNAKE_CASE`
+- Database: `snake_case`
+
+### Git
+- Branches: `feature/nome`, `bugfix/nome`
+- Commits: Conventional Commits
+
+## 🎯 Fases
+
+1. **Setup** (Semana 1)
+2. **Backend Core** (Semanas 2-3)
+3. **Frontend Core** (Semanas 4-5)
+4. **Features Avançadas** (Semanas 6-8)
+5. **Deploy** (Semanas 9-10)
+
+## 📊 Métricas
+
+- Code coverage > 80%
+- API response < 200ms
+- Frontend load < 2s
+- Course completion > 60%
+
+---
+
+**Versão**: 0.1.0 | **Status**: 🚧 Planejamento

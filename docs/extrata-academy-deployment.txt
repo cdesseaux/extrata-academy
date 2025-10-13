@@ -1,0 +1,825 @@
+# 🚀 EXTRATA ACADEMY - Deployment Guide
+
+## 🎯 Deployment Strategy
+
+### Environments
+
+1. **Development** (Local)
+   - Docker Compose local
+   - Hot reload
+   - Debug mode
+
+2. **Staging** (Pre-production)
+   - Similar to production
+   - Beta testing
+   - Integration testing
+
+3. **Production**
+   - High availability
+   - Auto-scaling
+   - Full monitoring
+
+---
+
+## 🐳 Docker Setup
+
+### Complete docker-compose.yml
+
+```yaml
+version: '3.8'
+
+services:
+  # Database
+  postgres:
+    image: postgres:17-alpine
+    container_name: academy-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-academy}
+      POSTGRES_USER: ${DB_USER:-academy}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-academy123}
+      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=C"
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U academy"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - academy-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: academy-redis
+    command: redis-server --appendonly yes
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - academy-network
+
+  # Keycloak (Auth)
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0
+    container_name: academy-keycloak
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: ${DB_USER:-academy}
+      KC_DB_PASSWORD: ${DB_PASSWORD:-academy123}
+      KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-localhost}
+      KC_HTTP_ENABLED: true
+    ports:
+      - "${KEYCLOAK_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: start-dev
+    networks:
+      - academy-network
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: ${BUILD_TARGET:-development}
+    container_name: academy-backend
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 4000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-academy}
+      DB_USER: ${DB_USER:-academy}
+      DB_PASSWORD: ${DB_PASSWORD:-academy123}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      KEYCLOAK_URL: http://keycloak:8080
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      S3_BUCKET: ${S3_BUCKET:-academy-assets}
+    ports:
+      - "${BACKEND_PORT:-4000}:4000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - academy-network
+    command: ${BACKEND_COMMAND:-npm run start:dev}
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: ${BUILD_TARGET:-development}
+    container_name: academy-frontend
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000/api}
+      NEXT_PUBLIC_KEYCLOAK_URL: ${NEXT_PUBLIC_KEYCLOAK_URL:-http://localhost:8080}
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - backend
+    networks:
+      - academy-network
+    command: ${FRONTEND_COMMAND:-npm run dev}
+
+  # NGINX (Production only)
+  nginx:
+    image: nginx:alpine
+    container_name: academy-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infrastructure/nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - academy-network
+    profiles:
+      - production
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  academy-network:
+    driver: bridge
+```
+
+### Backend Dockerfile
+
+```dockerfile
+# backend/Dockerfile
+
+# Base stage
+FROM node:20-alpine AS base
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production && npm cache clean --force
+
+# Development stage
+FROM node:20-alpine AS development
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+EXPOSE 4000
+CMD ["npm", "run", "start:dev"]
+
+# Build stage
+FROM node:20-alpine AS build
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+RUN npm prune --production
+
+# Production stage
+FROM node:20-alpine AS production
+WORKDIR /app
+
+# Add non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nestjs -u 1001
+
+# Copy built app
+COPY --from=build --chown=nestjs:nodejs /app/dist ./dist
+COPY --from=build --chown=nestjs:nodejs /app/node_modules ./node_modules
+COPY --from=build --chown=nestjs:nodejs /app/package*.json ./
+
+USER nestjs
+EXPOSE 4000
+
+CMD ["node", "dist/main.js"]
+```
+
+### Frontend Dockerfile
+
+```dockerfile
+# frontend/Dockerfile
+
+# Base stage
+FROM node:20-alpine AS base
+WORKDIR /app
+COPY package*.json ./
+
+# Development stage
+FROM base AS development
+RUN npm ci
+COPY . .
+EXPOSE 3000
+CMD ["npm", "run", "dev"]
+
+# Dependencies stage
+FROM base AS deps
+RUN npm ci --only=production
+
+# Build stage
+FROM base AS build
+RUN npm ci
+COPY . .
+ENV NEXT_TELEMETRY_DISABLED 1
+RUN npm run build
+
+# Production stage
+FROM node:20-alpine AS production
+WORKDIR /app
+
+# Add non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nextjs -u 1001
+
+# Copy built app
+COPY --from=build /app/public ./public
+COPY --from=build --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=build --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+USER nextjs
+EXPOSE 3000
+
+ENV PORT 3000
+ENV HOSTNAME "0.0.0.0"
+
+CMD ["node", "server.js"]
+```
+
+---
+
+## ☁️ AWS Deployment (Production)
+
+### Architecture
+
+```
+                    ┌─────────────────┐
+                    │   CloudFront    │
+                    │      (CDN)      │
+                    └────────┬────────┘
+                             │
+                    ┌────────▼────────┐
+                    │       ALB       │
+                    │  (Load Balancer)│
+                    └────────┬────────┘
+                             │
+            ┌────────────────┴────────────────┐
+            │                                  │
+     ┌──────▼──────┐                   ┌──────▼──────┐
+     │   ECS Task  │                   │   ECS Task  │
+     │  (Backend)  │                   │ (Frontend)  │
+     └──────┬──────┘                   └─────────────┘
+            │
+     ┌──────▼──────────────────────┐
+     │          RDS PostgreSQL      │
+     │         ElastiCache Redis    │
+     │              S3              │
+     └─────────────────────────────┘
+```
+
+### Infrastructure as Code (Terraform)
+
+```hcl
+# infrastructure/terraform/main.tf
+
+terraform {
+  required_version = ">= 1.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+  backend "s3" {
+    bucket = "extrata-academy-terraform-state"
+    key    = "prod/terraform.tfstate"
+    region = "us-east-1"
+  }
+}
+
+provider "aws" {
+  region = var.aws_region
+}
+
+# VPC
+module "vpc" {
+  source = "terraform-aws-modules/vpc/aws"
+  
+  name = "academy-vpc"
+  cidr = "10.0.0.0/16"
+  
+  azs             = ["us-east-1a", "us-east-1b"]
+  private_subnets = ["10.0.1.0/24", "10.0.2.0/24"]
+  public_subnets  = ["10.0.101.0/24", "10.0.102.0/24"]
+  
+  enable_nat_gateway = true
+  enable_vpn_gateway = false
+  
+  tags = {
+    Environment = var.environment
+    Project     = "extrata-academy"
+  }
+}
+
+# RDS PostgreSQL
+resource "aws_db_instance" "postgres" {
+  identifier             = "academy-postgres"
+  engine                 = "postgres"
+  engine_version         = "17.0"
+  instance_class         = "db.t3.medium"
+  allocated_storage      = 100
+  storage_type           = "gp3"
+  storage_encrypted      = true
+  
+  db_name  = "academy"
+  username = var.db_username
+  password = var.db_password
+  
+  vpc_security_group_ids = [aws_security_group.rds.id]
+  db_subnet_group_name   = aws_db_subnet_group.main.name
+  
+  backup_retention_period = 7
+  backup_window          = "03:00-04:00"
+  maintenance_window     = "sun:04:00-sun:05:00"
+  
+  skip_final_snapshot = false
+  final_snapshot_identifier = "academy-final-snapshot-${timestamp()}"
+  
+  tags = {
+    Name = "academy-postgres"
+  }
+}
+
+# ElastiCache Redis
+resource "aws_elasticache_cluster" "redis" {
+  cluster_id           = "academy-redis"
+  engine               = "redis"
+  engine_version       = "7.0"
+  node_type            = "cache.t3.micro"
+  num_cache_nodes      = 1
+  parameter_group_name = "default.redis7"
+  port                 = 6379
+  
+  subnet_group_name    = aws_elasticache_subnet_group.main.name
+  security_group_ids   = [aws_security_group.redis.id]
+  
+  tags = {
+    Name = "academy-redis"
+  }
+}
+
+# S3 Bucket (Videos & Assets)
+resource "aws_s3_bucket" "assets" {
+  bucket = "academy-assets-${var.environment}"
+  
+  tags = {
+    Name = "academy-assets"
+  }
+}
+
+resource "aws_s3_bucket_versioning" "assets" {
+  bucket = aws_s3_bucket.assets.id
+  
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_cors_configuration" "assets" {
+  bucket = aws_s3_bucket.assets.id
+  
+  cors_rule {
+    allowed_headers = ["*"]
+    allowed_methods = ["GET", "HEAD"]
+    allowed_origins = ["*"]
+    max_age_seconds = 3000
+  }
+}
+
+# ECS Cluster
+resource "aws_ecs_cluster" "main" {
+  name = "academy-cluster"
+  
+  setting {
+    name  = "containerInsights"
+    value = "enabled"
+  }
+}
+
+# ECS Task Definition (Backend)
+resource "aws_ecs_task_definition" "backend" {
+  family                   = "academy-backend"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = "512"
+  memory                   = "1024"
+  execution_role_arn       = aws_iam_role.ecs_execution.arn
+  task_role_arn            = aws_iam_role.ecs_task.arn
+  
+  container_definitions = jsonencode([
+    {
+      name  = "backend"
+      image = "${aws_ecr_repository.backend.repository_url}:latest"
+      
+      portMappings = [
+        {
+          containerPort = 4000
+          protocol      = "tcp"
+        }
+      ]
+      
+      environment = [
+        {
+          name  = "NODE_ENV"
+          value = "production"
+        },
+        {
+          name  = "DB_HOST"
+          value = aws_db_instance.postgres.address
+        },
+        {
+          name  = "REDIS_HOST"
+          value = aws_elasticache_cluster.redis.cache_nodes[0].address
+        }
+      ]
+      
+      secrets = [
+        {
+          name      = "DB_PASSWORD"
+          valueFrom = aws_secretsmanager_secret.db_password.arn
+        }
+      ]
+      
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = "/ecs/academy-backend"
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "ecs"
+        }
+      }
+    }
+  ])
+}
+
+# ECS Service (Backend)
+resource "aws_ecs_service" "backend" {
+  name            = "academy-backend"
+  cluster         = aws_ecs_cluster.main.id
+  task_definition = aws_ecs_task_definition.backend.arn
+  desired_count   = 2
+  launch_type     = "FARGATE"
+  
+  network_configuration {
+    subnets          = module.vpc.private_subnets
+    security_groups  = [aws_security_group.ecs_backend.id]
+    assign_public_ip = false
+  }
+  
+  load_balancer {
+    target_group_arn = aws_lb_target_group.backend.arn
+    container_name   = "backend"
+    container_port   = 4000
+  }
+  
+  depends_on = [aws_lb_listener.https]
+}
+
+# ALB
+resource "aws_lb" "main" {
+  name               = "academy-alb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.alb.id]
+  subnets            = module.vpc.public_subnets
+  
+  enable_deletion_protection = true
+  
+  tags = {
+    Name = "academy-alb"
+  }
+}
+
+# CloudFront Distribution
+resource "aws_cloudfront_distribution" "main" {
+  enabled             = true
+  is_ipv6_enabled     = true
+  comment             = "Extrata Academy CDN"
+  default_root_object = "index.html"
+  
+  origin {
+    domain_name = aws_lb.main.dns_name
+    origin_id   = "alb"
+    
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "https-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+  }
+  
+  default_cache_behavior {
+    allowed_methods        = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+    cached_methods         = ["GET", "HEAD"]
+    target_origin_id       = "alb"
+    viewer_protocol_policy = "redirect-to-https"
+    
+    forwarded_values {
+      query_string = true
+      headers      = ["Host", "Authorization"]
+      
+      cookies {
+        forward = "all"
+      }
+    }
+    
+    min_ttl     = 0
+    default_ttl = 300
+    max_ttl     = 3600
+  }
+  
+  restrictions {
+    geo_restriction {
+      restriction_type = "none"
+    }
+  }
+  
+  viewer_certificate {
+    acm_certificate_arn      = aws_acm_certificate.main.arn
+    ssl_support_method       = "sni-only"
+    minimum_protocol_version = "TLSv1.2_2021"
+  }
+}
+```
+
+### Deploy Script
+
+```bash
+#!/bin/bash
+# scripts/deploy-aws.sh
+
+set -e
+
+ENV=${1:-staging}
+REGION=${2:-us-east-1}
+
+echo "🚀 Deploying to $ENV..."
+
+# 1. Build Docker images
+echo "📦 Building Docker images..."
+docker build -t academy-backend:latest ./backend
+docker build -t academy-frontend:latest ./frontend
+
+# 2. Tag images
+echo "🏷️  Tagging images..."
+docker tag academy-backend:latest $AWS_ACCOUNT.dkr.ecr.$REGION.amazonaws.com/academy-backend:$ENV
+docker tag academy-frontend:latest $AWS_ACCOUNT.dkr.ecr.$REGION.amazonaws.com/academy-frontend:$ENV
+
+# 3. Push to ECR
+echo "📤 Pushing to ECR..."
+aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT.dkr.ecr.$REGION.amazonaws.com
+docker push $AWS_ACCOUNT.dkr.ecr.$REGION.amazonaws.com/academy-backend:$ENV
+docker push $AWS_ACCOUNT.dkr.ecr.$REGION.amazonaws.com/academy-frontend:$ENV
+
+# 4. Update ECS services
+echo "🔄 Updating ECS services..."
+aws ecs update-service --cluster academy-cluster --service academy-backend --force-new-deployment --region $REGION
+aws ecs update-service --cluster academy-cluster --service academy-frontend --force-new-deployment --region $REGION
+
+# 5. Wait for deployment
+echo "⏳ Waiting for deployment..."
+aws ecs wait services-stable --cluster academy-cluster --services academy-backend academy-frontend --region $REGION
+
+# 6. Invalidate CloudFront cache
+echo "🔥 Invalidating CloudFront cache..."
+aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_DISTRIBUTION_ID --paths "/*"
+
+echo "✅ Deployment complete!"
+```
+
+---
+
+## 🔐 Secrets Management
+
+### AWS Secrets Manager
+
+```bash
+# Store database password
+aws secretsmanager create-secret \
+  --name academy/db-password \
+  --secret-string "your-secure-password"
+
+# Store JWT secret
+aws secretsmanager create-secret \
+  --name academy/jwt-secret \
+  --secret-string "your-jwt-secret"
+
+# Store AWS keys
+aws secretsmanager create-secret \
+  --name academy/aws-credentials \
+  --secret-string '{"access_key":"xxx","secret_key":"xxx"}'
+```
+
+---
+
+## 📊 Monitoring & Logging
+
+### CloudWatch Setup
+
+```bash
+# Create log groups
+aws logs create-log-group --log-group-name /ecs/academy-backend
+aws logs create-log-group --log-group-name /ecs/academy-frontend
+
+# Set retention
+aws logs put-retention-policy \
+  --log-group-name /ecs/academy-backend \
+  --retention-in-days 30
+```
+
+### Prometheus + Grafana (Self-hosted)
+
+```yaml
+# docker-compose.monitoring.yml
+version: '3.8'
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:latest
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infrastructure/grafana/dashboards:/etc/grafana/provisioning/dashboards
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
+    ports:
+      - "3001:3000"
+    networks:
+      - monitoring
+
+volumes:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  monitoring:
+```
+
+---
+
+## 🔄 CI/CD Pipeline (GitHub Actions)
+
+### Complete Workflow
+
+```yaml
+# .github/workflows/deploy.yml
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AWS_REGION: us-east-1
+  ECR_BACKEND: ${{ secrets.AWS_ACCOUNT }}.dkr.ecr.us-east-1.amazonaws.com/academy-backend
+  ECR_FRONTEND: ${{ secrets.AWS_ACCOUNT }}.dkr.ecr.us-east-1.amazonaws.com/academy-frontend
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Run tests
+        run: |
+          cd backend && npm ci && npm run test
+          cd ../frontend && npm ci && npm run test
+
+  build-and-deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+      
+      - name: Build and push backend
+        run: |
+          docker build -t $ECR_BACKEND:latest -t $ECR_BACKEND:${{ github.sha }} ./backend
+          docker push $ECR_BACKEND:latest
+          docker push $ECR_BACKEND:${{ github.sha }}
+      
+      - name: Build and push frontend
+        run: |
+          docker build -t $ECR_FRONTEND:latest -t $ECR_FRONTEND:${{ github.sha }} ./frontend
+          docker push $ECR_FRONTEND:latest
+          docker push $ECR_FRONTEND:${{ github.sha }}
+      
+      - name: Deploy to ECS
+        run: |
+          aws ecs update-service --cluster academy-cluster --service academy-backend --force-new-deployment
+          aws ecs update-service --cluster academy-cluster --service academy-frontend --force-new-deployment
+      
+      - name: Wait for deployment
+        run: |
+          aws ecs wait services-stable --cluster academy-cluster --services academy-backend academy-frontend
+      
+      - name: Notify Slack
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          text: 'Deployment to production complete!'
+        if: always()
+```
+
+---
+
+## ✅ Pre-deployment Checklist
+
+- [ ] All tests passing
+- [ ] Code review approved
+- [ ] Database migrations ready
+- [ ] Environment variables set
+- [ ] Secrets stored securely
+- [ ] Backup taken
+- [ ] Rollback plan prepared
+- [ ] Monitoring alerts configured
+- [ ] Load balancer health checks configured
+- [ ] SSL certificates valid
+- [ ] DNS records updated
+- [ ] CDN cache configured
+- [ ] Rate limiting configured
+- [ ] Security groups configured
+
+---
+
+## 🔙 Rollback Procedure
+
+```bash
+# Quick rollback to previous version
+aws ecs update-service \
+  --cluster academy-cluster \
+  --service academy-backend \
+  --task-definition academy-backend:PREVIOUS_VERSION
+
+# Rollback database migration
+npm run migration:revert
+
+# Rollback CloudFront
+aws cloudfront create-invalidation \
+  --distribution-id $CLOUDFRONT_ID \
+  --paths "/*"
+```
+
+---
+
+**Status**: ✅ Ready for Production Deployment

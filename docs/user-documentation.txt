@@ -1,0 +1,1263 @@
+# 📚 EXTRATA ACADEMY - Documentação do Usuário
+
+## 📋 Overview
+
+Este documento contém **manuais completos** para todos os tipos de usuários do Extrata Academy:
+
+- 👨‍🎓 **Manual do Aluno** - Como usar a plataforma para aprender
+- 👨‍🏫 **Manual do Instrutor** - Como criar e gerenciar cursos
+- 👨‍💼 **Manual do Administrador** - Como gerenciar a plataforma
+- 🔧 **Guia de Troubleshooting** - Soluções para problemas comuns
+- ❓ **FAQs** - Perguntas frequentes
+
+---
+
+# 👨‍🎓 MANUAL DO ALUNO
+
+## 🚀 Primeiros Passos
+
+### 1. Fazendo Login
+
+**Acesso via Extrata:**
+1. Faça login no sistema Extrata (https://extrata.gov.br)
+2. Clique em **"Academy"** no menu superior
+3. Você será automaticamente autenticado no Academy
+
+**Acesso direto:**
+1. Acesse https://academy.extrata.gov.br
+2. Clique em **"Entrar com Extrata"**
+3. Use suas credenciais do Extrata
+4. Aceite os termos de uso e política de privacidade
+
+### 2. Configurando seu Perfil
+
+Após o primeiro login:
+
+1. Clique na sua **foto de perfil** (canto superior direito)
+2. Selecione **"Meu Perfil"**
+3. Complete as informações:
+   - ✅ Nome completo
+   - ✅ Email de contato
+   - ✅ Telefone (opcional)
+   - ✅ Foto de perfil (opcional)
+   - ✅ Preferências de notificação
+
+**Dica:** 💡 Uma foto de perfil ajuda a criar conexão com outros usuários!
+
+---
+
+## 📚 Navegando pela Plataforma
+
+### Dashboard Principal
+
+Quando você faz login, vê seu **Dashboard Pessoal**:
+
+```
+┌─────────────────────────────────────────────┐
+│  Bem-vindo, João! 👋                        │
+│  Nível 5 | 5.000 XP | Próximo: 1.000 XP    │
+├─────────────────────────────────────────────┤
+│  📊 SUAS ESTATÍSTICAS                       │
+│  3 Cursos | 45% Progresso | 12h Estudadas  │
+├─────────────────────────────────────────────┤
+│  📖 CONTINUAR APRENDENDO                    │
+│  [Curso em andamento com barra de progresso]│
+├─────────────────────────────────────────────┤
+│  🎯 CURSOS RECOMENDADOS                     │
+│  [Cards de cursos sugeridos]                │
+└─────────────────────────────────────────────┘
+```
+
+### Menu de Navegação
+
+- 🏠 **Início** - Seu dashboard pessoal
+- 📚 **Cursos** - Catálogo completo de cursos
+- 📊 **Meu Aprendizado** - Seus cursos e progresso
+- 🏆 **Conquistas** - Seus badges e certificados
+- 📈 **Ranking** - Leaderboard de XP
+- 👤 **Perfil** - Suas informações
+
+---
+
+## 🎓 Fazendo um Curso
+
+### 1. Encontrando Cursos
+
+**No catálogo:**
+1. Clique em **"Cursos"** no menu
+2. Use os filtros:
+   - 📁 Categoria (Fundamentos, Avançado, etc.)
+   - 📊 Nível (Iniciante, Intermediário, Avançado)
+   - 🔍 Busca por palavra-chave
+
+**Cursos recomendados:**
+- O sistema sugere cursos baseados no seu perfil
+- Cursos pré-requisitos aparecem destacados
+
+### 2. Matriculando-se em um Curso
+
+1. Clique no **card do curso** desejado
+2. Leia a descrição, requisitos e conteúdo
+3. Clique em **"Iniciar Curso"**
+4. Confirme sua matrícula
+
+**💡 Dica:** Cursos são gratuitos e sem limite de matrículas!
+
+### 3. Assistindo Aulas
+
+#### Vídeo-aulas
+
+```
+┌─────────────────────────────────────────────┐
+│  🎥 VIDEO PLAYER                            │
+│  ┌─────────────────────────────────────┐   │
+│  │                                     │   │
+│  │         [▶ Play]                   │   │
+│  │                                     │   │
+│  └─────────────────────────────────────┘   │
+│  ⏮  ⏯  ⏭  🔊  ⚙️  ⛶                    │
+│                                             │
+│  Lição 2.1: Conceitos Básicos              │
+│  ████████░░░░ 75% concluída                │
+│                                             │
+│  📎 Recursos:                               │
+│  • Slides da aula.pdf                       │
+│  • Exercícios.zip                           │
+└─────────────────────────────────────────────┘
+```
+
+**Controles do player:**
+- ⏯ **Play/Pause** - Iniciar ou pausar
+- ⏮ ⏭ **Pular** - Voltar/avançar 10 segundos
+- 🔊 **Volume** - Ajustar som
+- ⚙️ **Configurações** - Velocidade (0.5x a 2x), qualidade
+- ⛶ **Tela cheia** - Modo imersivo
+
+**💡 Dicas:**
+- Seu progresso é salvo automaticamente a cada 10 segundos
+- Você pode retomar de onde parou
+- Aulas são marcadas como concluídas ao assistir 90%
+
+#### Aulas em Texto
+
+1. Leia o conteúdo com calma
+2. Use os recursos adicionais (links, PDFs)
+3. Clique em **"Marcar como Concluída"** ao terminar
+
+**💡 Dica:** Textos mostram tempo estimado de leitura!
+
+### 4. Fazendo Quizzes
+
+#### Antes do Quiz
+- Revise o conteúdo do módulo
+- Veja os recursos adicionais
+- Anote as dúvidas
+
+#### Durante o Quiz
+
+```
+┌─────────────────────────────────────────────┐
+│  Quiz: Avaliação Módulo 1                  │
+│  Questão 3 de 10          ⏱️ 08:45         │
+├─────────────────────────────────────────────┤
+│                                             │
+│  Qual é a principal função do Extrata?     │
+│                                             │
+│  ○ A) Criar propostas                      │
+│  ○ B) Monitorar convênios                  │
+│  ● C) Gestão completa de recursos federais │
+│  ○ D) Apenas relatórios                    │
+│                                             │
+│  [← Anterior]  [Próxima →]                 │
+└─────────────────────────────────────────────┘
+```
+
+**Regras:**
+- ✅ Nota mínima: 70% (pode variar por curso)
+- ✅ Tentativas: 3 por quiz (padrão)
+- ✅ Tempo limite: Varia por quiz
+- ✅ Pode revisar respostas antes de submeter
+
+#### Após o Quiz
+
+```
+┌─────────────────────────────────────────────┐
+│  🎉 Parabéns!                               │
+│  Você foi aprovado!                         │
+│                                             │
+│  Sua nota: 85%                              │
+│  Nota mínima: 70%                           │
+│  Questões corretas: 8/10                    │
+│                                             │
+│  📊 Ver Respostas  |  ▶️ Continuar          │
+└─────────────────────────────────────────────┘
+```
+
+**Se não passar:**
+- Veja quais questões errou
+- Revise o conteúdo
+- Tente novamente (até 3 vezes)
+
+---
+
+## 🏆 Gamificação
+
+### Sistema de XP (Pontos de Experiência)
+
+**Como ganhar XP:**
+
+| Ação | XP Ganho |
+|------|----------|
+| Lição completa | 50 XP |
+| Quiz aprovado | 100 XP |
+| Quiz com nota perfeita | 200 XP |
+| Curso completo | 500 XP |
+| Primeiro curso | 1.000 XP (bônus) |
+| Sequência de 7 dias | 300 XP |
+
+**Níveis:**
+
+```
+Nível 1:  0 XP       → Iniciante
+Nível 2:  1.000 XP   → Aprendiz
+Nível 3:  2.500 XP   → Praticante
+Nível 4:  5.000 XP   → Experiente
+Nível 5:  10.000 XP  → Expert
+Nível 10: 100.000 XP → Mestre
+```
+
+**💡 Dica:** Cada level up desbloqueia um badge especial!
+
+### Badges e Conquistas
+
+**Tipos de badges:**
+
+🎯 **Milestones**
+- 🎓 Primeira Conclusão - Complete seu primeiro curso
+- 🔟 Dez Cursos - Complete 10 cursos
+- 💯 Perfeição - Obtenha 100% em 5 quizzes
+
+⚡ **Velocidade**
+- 🚀 Veloz - Complete curso em menos de 24h
+- ⏰ Madrugador - Estude antes das 7h da manhã
+- 🌙 Coruja - Estude depois das 23h
+
+🏅 **Especialização**
+- 🤖 Mestre da IA - Complete todos os cursos de IA
+- 📋 Expert em Propostas - Complete trilha de propostas
+- 📊 Analista Pro - Complete cursos de analytics
+
+🏆 **Ranking**
+- 🥇 Top 10 - Entre no top 10 do leaderboard
+- 👑 Número 1 - Fique em primeiro lugar
+- 📈 Em Alta - Maior ganho de XP na semana
+
+**Visualizar badges:**
+1. Clique em **"Conquistas"** no menu
+2. Veja seus badges conquistados
+3. Veja progresso para próximos badges
+
+### Leaderboard
+
+```
+┌─────────────────────────────────────────────┐
+│  🏆 RANKING GERAL                           │
+│  Filtros: Global | Meu Município | Minha Equipe│
+├──────┬───────────────────────┬──────┬───────┤
+│ Rank │ Usuário               │ XP   │ Nível │
+├──────┼───────────────────────┼──────┼───────┤
+│  1   │ 👑 Maria Silva        │ 25.3k│  12   │
+│  2   │ 🥈 João Santos        │ 22.1k│  11   │
+│  3   │ 🥉 Ana Costa          │ 20.5k│  11   │
+│  4   │ Pedro Lima            │ 18.2k│  10   │
+│  5   │ Sofia Oliveira        │ 17.8k│  10   │
+│ ...  │ ...                   │ ...  │ ...   │
+│ 42   │ ➡️ Você               │ 5.0k │   5   │
+└──────┴───────────────────────┴──────┴───────┘
+```
+
+**💡 Dica:** Use o leaderboard para se motivar e ver seu progresso!
+
+---
+
+## 📜 Certificados
+
+### Obtendo Certificados
+
+**Requisitos:**
+- ✅ Completar 100% do curso
+- ✅ Passar em todos os quizzes (quando aplicável)
+- ✅ CPF cadastrado no perfil
+
+**Geração:**
+- Certificados são gerados **automaticamente**
+- Você recebe email de notificação
+- Disponível para download imediatamente
+
+### Visualizando Certificados
+
+1. Clique em **"Conquistas"** no menu
+2. Selecione aba **"Certificados"**
+3. Veja todos os seus certificados
+
+```
+┌─────────────────────────────────────────────┐
+│  📜 MEUS CERTIFICADOS                       │
+├─────────────────────────────────────────────┤
+│  [Thumbnail]                                │
+│  Introdução ao Extrata                      │
+│  Concluído em: 15/01/2025                   │
+│  Carga horária: 8h                          │
+│  🔗 Validar | 📥 Baixar | 📤 Compartilhar  │
+└─────────────────────────────────────────────┘
+```
+
+### Compartilhando Certificados
+
+**LinkedIn:**
+1. Clique em **"Compartilhar"** no certificado
+2. Selecione **"LinkedIn"**
+3. Autorize compartilhamento
+4. Certificado aparece no seu perfil
+
+**Download:**
+- Formato: PDF
+- Inclui: Nome, CPF, curso, data, QR Code
+- QR Code permite validação online
+
+### Validando Certificados
+
+**Validar certificado de terceiros:**
+1. Acesse: https://academy.extrata.gov.br/validar
+2. Digite o **código do certificado** (no rodapé do PDF)
+3. Ou escaneie o **QR Code**
+4. Sistema mostra informações do certificado
+
+---
+
+## 🔔 Notificações
+
+### Tipos de Notificações
+
+📧 **Email:**
+- Novo curso disponível
+- Certificado emitido
+- Lembrete de curso incompleto
+- Achievement desbloqueado
+
+🔔 **No sistema:**
+- Nova lição desbloqueada
+- Resposta de instrutor
+- XP ganho
+- Level up
+
+### Gerenciando Notificações
+
+1. Vá em **"Perfil"** → **"Configurações"**
+2. Seção **"Notificações"**
+3. Ative/desative por tipo:
+   - ✅ Emails de curso
+   - ✅ Emails de certificado
+   - ✅ Notificações no sistema
+   - ✅ Lembretes de estudo
+
+**💡 Dica:** Desative notificações que não são úteis para você!
+
+---
+
+## 🆘 Precisa de Ajuda?
+
+### Recursos de Suporte
+
+**Central de Ajuda:**
+- Acesse: https://academy.extrata.gov.br/ajuda
+- Busque por palavras-chave
+- Artigos, tutoriais e vídeos
+
+**Chat de Suporte:**
+- Clique no ícone 💬 (canto inferior direito)
+- Horário: Segunda a Sexta, 9h-18h
+- Resposta em até 2 horas
+
+**Email:**
+- suporte@extrata.gov.br
+- Resposta em até 24 horas úteis
+
+**Comunidade:**
+- Discord: https://discord.gg/extrata-academy
+- Tire dúvidas com outros alunos
+
+---
+
+# 👨‍🏫 MANUAL DO INSTRUTOR
+
+## 🎯 Visão Geral
+
+Como **Instrutor**, você pode:
+- ✅ Criar e publicar cursos
+- ✅ Estruturar módulos e lições
+- ✅ Adicionar vídeos, textos e quizzes
+- ✅ Acompanhar progresso dos alunos
+- ✅ Responder dúvidas
+
+---
+
+## 📝 Criando um Curso
+
+### 1. Acessar o Editor
+
+1. Clique em **"Cursos"** no menu
+2. Clique em **"Criar Novo Curso"**
+3. Você verá o **Editor de Cursos**
+
+### 2. Informações Básicas
+
+**Preencha:**
+
+```
+Título: _______________________________
+(Ex: "Introdução ao Módulo de Propostas")
+
+Descrição: ____________________________
+(Breve resumo do que o curso ensina)
+
+Categoria: [ Dropdown ]
+- Fundamentos
+- Propostas
+- Analytics
+- IA e Automação
+- Avançado
+
+Nível: [ Dropdown ]
+- Iniciante
+- Intermediário
+- Avançado
+
+Duração estimada: _____ horas
+
+Thumbnail: [Upload de imagem]
+(Recomendado: 800x600px, formato JPG/PNG)
+```
+
+**💡 Dicas:**
+- Título claro e direto
+- Descrição com 2-3 frases
+- Thumbnail atrativo e profissional
+
+### 3. Estruturando o Curso
+
+#### Criar Módulos
+
+```
+Curso: Introdução ao Extrata
+│
+├── Módulo 1: Fundamentos
+│   ├── Lição 1.1: O que é o Extrata?
+│   ├── Lição 1.2: Como funciona?
+│   └── Quiz 1
+│
+├── Módulo 2: Cadastro de Propostas
+│   ├── Lição 2.1: Tipos de proposta
+│   ├── Lição 2.2: Preencher dados
+│   └── Quiz 2
+│
+└── Módulo 3: Monitoramento
+    └── ...
+```
+
+**Criar módulo:**
+1. Clique em **"+ Adicionar Módulo"**
+2. Digite o **nome do módulo**
+3. Clique em **"Salvar"**
+
+**Reordenar:**
+- Arraste e solte módulos para reordenar
+- Mesma coisa para lições dentro de módulos
+
+#### Criar Lições
+
+**Tipos de lição:**
+1. 🎥 **Vídeo** - Vídeo-aula
+2. 📝 **Texto** - Conteúdo escrito
+3. ❓ **Quiz** - Avaliação
+
+### 4. Criando Lição de Vídeo
+
+```
+┌─────────────────────────────────────────────┐
+│  Nova Lição de Vídeo                        │
+├─────────────────────────────────────────────┤
+│  Título: ______________________________     │
+│                                             │
+│  Descrição: ___________________________     │
+│  _________________________________________  │
+│                                             │
+│  Upload de Vídeo:                           │
+│  [Clique ou arraste arquivo]                │
+│  Formatos: MP4, MOV, AVI (max 500MB)       │
+│                                             │
+│  OU insira URL do YouTube:                  │
+│  https://youtube.com/watch?v=___________    │
+│                                             │
+│  Duração: ___ min  (preenchido auto)        │
+│                                             │
+│  Recursos adicionais:                       │
+│  [+ Adicionar PDF, Slides, Links]           │
+│                                             │
+│  [Cancelar]  [Salvar Rascunho]  [Publicar] │
+└─────────────────────────────────────────────┘
+```
+
+**💡 Dicas de vídeo:**
+- Qualidade mínima: 720p (HD)
+- Duração ideal: 5-15 minutos
+- Use legendas (acessibilidade)
+- Organize em capítulos (se longo)
+
+### 5. Criando Lição de Texto
+
+**Editor rich text:**
+- Formatação: **negrito**, *itálico*, ~~tachado~~
+- Headings: # H1, ## H2, ### H3
+- Listas: numeradas ou bullet points
+- Links: [texto](url)
+- Imagens: Upload inline
+- Code blocks: ```código```
+- Vídeos embedded: YouTube, Vimeo
+
+**Estrutura recomendada:**
+
+```markdown
+# Título da Lição
+
+## Introdução
+Breve contexto...
+
+## Conteúdo Principal
+### Tópico 1
+Explicação...
+
+### Tópico 2
+Explicação...
+
+## Exemplos Práticos
+- Exemplo 1
+- Exemplo 2
+
+## Resumo
+Recapitulação dos pontos principais...
+
+## Próximos Passos
+O que fazer após esta lição...
+```
+
+### 6. Criando Quiz
+
+#### Configurações do Quiz
+
+```
+Nome do Quiz: _________________________
+
+Nota mínima: ___% (padrão: 70%)
+
+Tentativas máximas: ___ (padrão: 3)
+
+Tempo limite: ___ minutos (opcional)
+
+[ ] Embaralhar questões
+[ ] Embaralhar respostas
+[ ] Mostrar resposta correta após submissão
+```
+
+#### Adicionar Questões
+
+**Questão de Múltipla Escolha:**
+
+```
+Pergunta: _____________________________
+______________________________________
+
+Tipo: ○ Única resposta  ○ Múltiplas respostas
+
+Opções:
+[ ] A) _______________________________
+[✓] B) _______________________________ (correta)
+[ ] C) _______________________________
+[ ] D) _______________________________
+
+[+ Adicionar opção]
+
+Explicação (opcional): _________________
+(Mostrada após resposta)
+
+Pontos: ___ (padrão: 1)
+```
+
+**Questão Verdadeiro/Falso:**
+
+```
+Afirmação: ____________________________
+______________________________________
+
+Resposta correta: ○ Verdadeiro  ● Falso
+
+Explicação: ___________________________
+```
+
+**💡 Dicas de quiz:**
+- 5-10 questões por quiz
+- Misture dificuldades
+- Adicione explicações às respostas
+- Teste o quiz antes de publicar
+
+---
+
+## 📊 Acompanhamento de Alunos
+
+### Dashboard do Instrutor
+
+```
+┌─────────────────────────────────────────────┐
+│  📊 SEUS CURSOS                             │
+├─────────────────────────────────────────────┤
+│  Introdução ao Extrata                      │
+│  👥 150 alunos | ⭐ 4.8 | ✅ 85% conclusão  │
+│  [Ver Detalhes]                             │
+├─────────────────────────────────────────────┤
+│  Propostas Avançadas                        │
+│  👥 45 alunos | ⭐ 4.6 | ✅ 72% conclusão   │
+│  [Ver Detalhes]                             │
+└─────────────────────────────────────────────┘
+```
+
+### Métricas Detalhadas
+
+**Por curso:**
+- Total de matrículas
+- Taxa de conclusão
+- Tempo médio de conclusão
+- Avaliação média (estrelas)
+- Lições com mais abandono
+- Quizzes com menor aprovação
+
+**Por aluno:**
+- Progresso individual
+- Tempo gasto
+- Notas em quizzes
+- Última atividade
+
+**Como acessar:**
+1. Clique em **"Cursos"** → **"Meus Cursos"**
+2. Selecione um curso
+3. Aba **"Analytics"**
+
+### Exportar Relatórios
+
+```
+[📊 Exportar Relatório]
+
+Formato: ○ CSV  ● Excel  ○ PDF
+
+Período: [01/01/2025] até [31/01/2025]
+
+Incluir:
+[✓] Lista de alunos
+[✓] Progresso individual
+[✓] Notas de quizzes
+[✓] Certificados emitidos
+[ ] Feedbacks
+
+[Cancelar]  [Exportar]
+```
+
+---
+
+## ✅ Melhores Práticas
+
+### Criação de Conteúdo
+
+**DO:**
+- ✅ Divida em módulos lógicos
+- ✅ Lições de 5-15 minutos
+- ✅ Use exemplos práticos
+- ✅ Inclua recursos adicionais
+- ✅ Revise gramática e ortografia
+- ✅ Teste o curso como aluno
+
+**DON'T:**
+- ❌ Vídeos muito longos (>30min)
+- ❌ Texto sem formatação
+- ❌ Quizzes muito difíceis
+- ❌ Pré-requisitos não mencionados
+- ❌ Publicar sem testar
+
+### Engajamento de Alunos
+
+- 📧 Envie mensagem de boas-vindas
+- 📊 Monitore métricas semanalmente
+- 💬 Responda dúvidas rapidamente
+- 🎁 Reconheça conclusões
+- 📈 Melhore com base em feedback
+
+---
+
+# 👨‍💼 MANUAL DO ADMINISTRADOR
+
+## 🎯 Visão Geral
+
+Como **Administrador**, você tem acesso total:
+- ✅ Gerenciar todos os cursos
+- ✅ Gerenciar usuários e permissões
+- ✅ Ver analytics completos
+- ✅ Configurar gamificação
+- ✅ Administrar certificados
+- ✅ Configurações do sistema
+
+---
+
+## 👥 Gestão de Usuários
+
+### Visualizar Usuários
+
+1. Acesse **"Admin"** → **"Usuários"**
+2. Veja lista completa de usuários
+
+```
+┌─────────────────────────────────────────────┐
+│  👥 USUÁRIOS (165)                          │
+│  🔍 Buscar: ___________  Filtros ▼          │
+├──────┬─────────┬────────────┬──────┬───────┤
+│ Nome │ Email   │ Município  │ Role │ Ações │
+├──────┼─────────┼────────────┼──────┼───────┤
+│ João │ j@ex... │ São Paulo  │ STUD │ [⋮]  │
+│ Maria│ m@ex... │ Rio de Jan.│ INST │ [⋮]  │
+│ ...  │ ...     │ ...        │ ...  │ ...   │
+└──────┴─────────┴────────────┴──────┴───────┘
+```
+
+**Filtros:**
+- Por role (Admin, Instrutor, Aluno, Auditor)
+- Por município
+- Por status (Ativo, Inativo)
+- Por data de cadastro
+
+### Editar Usuário
+
+**Ações disponíveis:**
+- ✏️ Editar informações
+- 🔄 Alterar role
+- 🔒 Desativar/Ativar conta
+- 📊 Ver progresso
+- 🗑️ Excluir conta (cuidado!)
+
+**Alterar role:**
+1. Clique em **[⋮]** → **"Editar"**
+2. Selecione novo **Role**:
+   - ADMIN - Acesso total
+   - INSTRUCTOR - Criar cursos
+   - STUDENT - Apenas fazer cursos
+   - AUDITOR - Apenas visualizar
+3. Clique em **"Salvar"**
+
+---
+
+## 📚 Gestão de Cursos
+
+### Aprovar Cursos
+
+**Fluxo de aprovação:**
+1. Instrutor cria curso (status: DRAFT)
+2. Instrutor solicita revisão
+3. Admin revisa e aprova/rejeita
+4. Se aprovado → status: PUBLISHED
+
+**Revisar curso pendente:**
+1. **"Admin"** → **"Cursos Pendentes"**
+2. Clique no curso
+3. Revise:
+   - Conteúdo completo?
+   - Qualidade adequada?
+   - Informações corretas?
+4. Ação:
+   - ✅ **Aprovar** → Publica imediatamente
+   - ❌ **Rejeitar** → Volta para instrutor com feedback
+
+### Gerenciar Todos os Cursos
+
+**Ações de admin:**
+- 👁️ Visualizar qualquer curso
+- ✏️ Editar qualquer curso
+- 🗑️ Arquivar curso
+- 📊 Ver analytics
+- 🚀 Destacar curso (featured)
+
+---
+
+## 🏆 Configurar Gamificação
+
+### Gerenciar Badges
+
+1. **"Admin"** → **"Gamificação"** → **"Badges"**
+2. Visualize todos os badges
+
+**Criar novo badge:**
+
+```
+Nome: ______________________________
+
+Descrição: __________________________
+________________________________________
+
+Ícone: [Upload de imagem]
+(PNG transparente, 256x256px)
+
+Critério: [ Dropdown ]
+- Completar X cursos
+- Obter X XP
+- Sequência de X dias
+- Quiz perfeito X vezes
+- Customizado (SQL query)
+
+Valor: _____
+
+[ ] Badge oculto (surpresa)
+
+[Cancelar]  [Criar Badge]
+```
+
+### Ajustar Recompensas de XP
+
+```
+┌─────────────────────────────────────────────┐
+│  ⚙️ CONFIGURAÇÃO DE XP                      │
+├─────────────────────────────────────────────┤
+│  Lição completa:        [50] XP             │
+│  Quiz aprovado:         [100] XP            │
+│  Quiz perfeito:         [200] XP            │
+│  Curso completo:        [500] XP            │
+│  Primeiro curso (bônus):[1000] XP           │
+│  Sequência 7 dias:      [300] XP            │
+│                                             │
+│  [Resetar Padrões]  [Salvar Alterações]    │
+└─────────────────────────────────────────────┘
+```
+
+### Configurar Leaderboard
+
+- [ ] Mostrar leaderboard global
+- [ ] Permitir filtro por município
+- [ ] Mostrar top 10/50/100
+- [ ] Resetar ranking: ○ Nunca  ○ Mensal  ○ Anual
+
+---
+
+## 📊 Analytics e Relatórios
+
+### Dashboard Geral
+
+```
+┌─────────────────────────────────────────────┐
+│  📈 VISÃO GERAL - Últimos 30 dias          │
+├─────────────────────────────────────────────┤
+│  👥 Usuários Ativos: 523 (+12%)            │
+│  📚 Cursos Publicados: 25 (+3)             │
+│  ✅ Taxa de Conclusão: 68% (+5%)           │
+│  📜 Certificados: 342 (+45)                │
+│  ⏱️ Tempo Médio: 12.5h (-0.8h)            │
+└─────────────────────────────────────────────┘
+```
+
+**Métricas disponíveis:**
+- Usuários ativos (diário/semanal/mensal)
+- Novos cadastros
+- Matrículas por curso
+- Taxa de conclusão
+- Tempo médio de estudo
+- Certificados emitidos
+- XP ganho total
+- Engagement (DAU/MAU)
+
+### Relatórios Exportáveis
+
+**Tipos:**
+1. **Relatório de Usuários**
+   - Usuários ativos/inativos
+   - Progresso individual
+   - Municípios mais ativos
+
+2. **Relatório de Cursos**
+   - Performance por curso
+   - Cursos mais populares
+   - Taxa de abandono
+
+3. **Relatório de Certificados**
+   - Certificados emitidos
+   - Carga horária total
+   - Distribuição por curso
+
+4. **Relatório de Gamificação**
+   - Top XP earners
+   - Badges mais conquistados
+   - Sequências de estudo
+
+**Exportar:**
+- Formato: Excel, CSV, PDF
+- Período: Personalizado
+- Agendamento: Diário/Semanal/Mensal
+
+---
+
+## ⚙️ Configurações do Sistema
+
+### Configurações Gerais
+
+```
+[ ] Permitir auto-matrícula em cursos
+[ ] Aprovar novos usuários manualmente
+[ ] Permitir avaliações de cursos
+[ ] Mostrar leaderboard público
+[✓] Enviar emails de notificação
+[✓] Permitir download de certificados
+[ ] Modo manutenção
+```
+
+### Configurações de Email
+
+```
+Remetente: _______________________________
+(Ex: "Extrata Academy <no-reply@extrata.gov.br>")
+
+Template de boas-vindas:
+[ ] Usar padrão  ○ Customizar
+
+Template de certificado:
+[ ] Usar padrão  ○ Customizar
+
+Frequência de lembretes:
+○ Nunca  ● Semanal  ○ Quinzenal
+```
+
+### Backup e Manutenção
+
+**Backups:**
+- Frequência: Diário (2h da manhã)
+- Retenção: 30 dias
+- Localização: AWS S3 (criptografado)
+- [🔄 Forçar Backup Agora]
+
+**Manutenção:**
+- [🧹 Limpar cache]
+- [🔄 Reprocessar certificados pendentes]
+- [📊 Recalcular estatísticas]
+- [🗑️ Arquivar logs antigos]
+
+---
+
+## 🚨 Troubleshooting Administrativo
+
+### Usuário não consegue logar
+
+**Verificar:**
+1. Conta está ativa?
+2. Keycloak está funcionando?
+3. Email está verificado?
+
+**Solução:**
+```bash
+# Via admin panel
+Admin → Usuários → [Buscar usuário]
+→ Verificar status → Resetar senha
+```
+
+### Certificado não foi gerado
+
+**Verificar:**
+1. Usuário completou 100%?
+2. Passou em todos os quizzes?
+3. CPF cadastrado?
+
+**Solução:**
+```bash
+Admin → Certificados → Gerar Manualmente
+→ Selecionar usuário e curso → Gerar
+```
+
+### Curso não aparece no catálogo
+
+**Verificar:**
+1. Status é "PUBLISHED"?
+2. Tem pelo menos 1 lição?
+3. Cache do catálogo atualizado?
+
+**Solução:**
+```bash
+Admin → Cursos → [Buscar curso]
+→ Verificar status → Publicar
+→ Admin → Manutenção → Limpar cache
+```
+
+---
+
+# 🔧 GUIA DE TROUBLESHOOTING
+
+## Problemas Comuns e Soluções
+
+### 🔐 Login e Autenticação
+
+**Problema: Não consigo fazer login**
+
+**Soluções:**
+1. Verifique suas credenciais do Extrata
+2. Tente fazer logout e login novamente no Extrata
+3. Limpe cache e cookies do navegador
+4. Tente em navegação anônima
+5. Entre em contato: suporte@extrata.gov.br
+
+**Problema: Sessão expira rapidamente**
+
+**Solução:**
+- Isso é normal após 15 minutos de inatividade
+- Suas atividades são salvas automaticamente
+- Faça login novamente para continuar
+
+---
+
+### 🎥 Vídeos
+
+**Problema: Vídeo não carrega**
+
+**Soluções:**
+1. Verifique sua conexão de internet
+2. Tente diminuir a qualidade (⚙️ → Qualidade → 480p)
+3. Recarregue a página (F5)
+4. Tente outro navegador
+5. Desative extensões (AdBlock, etc.)
+
+**Problema: Vídeo trava/buffers muito**
+
+**Soluções:**
+1. Pause o vídeo por 10 segundos
+2. Reduza a qualidade para 360p ou 480p
+3. Verifique velocidade da internet (min: 2 Mbps)
+4. Feche outras abas/apps consumindo internet
+
+**Problema: Progresso do vídeo não salva**
+
+**Solução:**
+- Progresso salva a cada 10 segundos automaticamente
+- Certifique-se de estar logado
+- Não feche o navegador imediatamente após terminar
+
+---
+
+### ❓ Quizzes
+
+**Problema: Quiz não submete**
+
+**Soluções:**
+1. Verifique se respondeu todas as questões
+2. Aguarde 2-3 segundos após clicar em "Submeter"
+3. Se persistir, recarregue e tente novamente
+4. Entre em contato se problema continuar
+
+**Problema: Usei todas as tentativas**
+
+**Solução:**
+- Cada quiz permite 3 tentativas (padrão)
+- Revise o conteúdo do módulo
+- Solicite reset ao instrutor (Admin → Suporte)
+
+---
+
+### 📜 Certificados
+
+**Problema: Certificado não foi gerado**
+
+**Verificar:**
+- [ ] Completou 100% do curso?
+- [ ] Passou em todos os quizzes?
+- [ ] CPF está cadastrado no perfil?
+
+**Solução:**
+1. Complete todos os requisitos
+2. Aguarde até 24h
+3. Se não gerar, contate: suporte@extrata.gov.br
+
+**Problema: Erro ao baixar certificado**
+
+**Soluções:**
+1. Tente novamente após 1 minuto
+2. Tente outro navegador
+3. Clique com botão direito → "Salvar link como"
+
+---
+
+### 📱 Mobile e Navegadores
+
+**Navegadores suportados:**
+- ✅ Google Chrome (últimas 2 versões)
+- ✅ Firefox (últimas 2 versões)
+- ✅ Safari (últimas 2 versões)
+- ✅ Edge (últimas 2 versões)
+- ❌ Internet Explorer (não suportado)
+
+**Problema: Site não funciona no celular**
+
+**Solução:**
+- Academy é mobile-friendly
+- Use navegadores atualizados
+- Ative JavaScript
+- Desative modo economia de dados
+
+---
+
+# ❓ PERGUNTAS FREQUENTES (FAQs)
+
+## Geral
+
+**P: O Academy é gratuito?**
+R: Sim! Todos os cursos são 100% gratuitos para usuários do Extrata.
+
+**P: Preciso ter conta no Extrata?**
+R: Sim, o login é integrado com o sistema Extrata.
+
+**P: Posso fazer cursos offline?**
+R: Não no momento, mas estamos desenvolvendo essa funcionalidade.
+
+**P: Quanto tempo tenho para completar um curso?**
+R: Não há prazo! Estude no seu ritmo.
+
+---
+
+## Cursos e Certificados
+
+**P: Quantos cursos posso fazer?**
+R: Sem limite! Faça quantos quiser.
+
+**P: O certificado tem validade?**
+R: Sim, o certificado é válido por tempo indeterminado.
+
+**P: O certificado é reconhecido?**
+R: Sim, certificados são oficiais e reconhecidos pelo Extrata.
+
+**P: Posso imprimir o certificado?**
+R: Sim! Baixe o PDF e imprima.
+
+---
+
+## Gamificação
+
+**P: O que é XP?**
+R: Pontos de experiência que você ganha estudando.
+
+**P: XP expira?**
+R: Não, XP acumulado nunca expira.
+
+**P: Como subir de nível?**
+R: Ganhe XP completando lições, quizzes e cursos.
+
+**P: Badges dão alguma vantagem?**
+R: Badges são reconhecimento visual. Alguns podem desbloquear cursos especiais no futuro.
+
+---
+
+## Suporte
+
+**P: Como falo com o suporte?**
+R: 
+- 💬 Chat: Clique no ícone no canto inferior direito
+- 📧 Email: suporte@extrata.gov.br
+- 📞 Telefone: [NÚMERO]
+
+**P: Qual o horário do suporte?**
+R: Segunda a Sexta, 9h às 18h (horário de Brasília)
+
+**P: Quanto tempo para resposta?**
+R:
+- Chat: Até 2 horas
+- Email: Até 24 horas úteis
+
+---
+
+## 📞 Contatos e Recursos
+
+### Suporte Técnico
+- 💬 **Chat**: Disponível no sistema
+- 📧 **Email**: suporte@extrata.gov.br
+- 📞 **Telefone**: [A DEFINIR]
+- ⏰ **Horário**: Seg-Sex, 9h-18h
+
+### Central de Ajuda
+- 🌐 **URL**: https://academy.extrata.gov.br/ajuda
+- 📺 **Vídeos tutoriais**: https://academy.extrata.gov.br/tutoriais
+- 📚 **Base de conhecimento**: https://docs.extrata.gov.br/academy
+
+### Comunidade
+- 💬 **Discord**: https://discord.gg/extrata-academy
+- 👥 **Fórum**: https://forum.extrata.gov.br
+
+### Feedback e Sugestões
+- 💡 **Sugestões**: feedback@extrata.gov.br
+- 🐛 **Reportar bug**: bugs@extrata.gov.br
+
+---
+
+**Última atualização**: 06/10/2025  
+**Versão**: 1.0
+
+---
+
+# 📝 APÊNDICES
+
+## A. Glossário
+
+- **LMS** - Learning Management System (Sistema de Gestão de Aprendizagem)
+- **XP** - Experience Points (Pontos de Experiência)
+- **Badge** - Emblema ou conquista digital
+- **Leaderboard** - Ranking ou tabela de classificação
+- **Quiz** - Avaliação ou teste de conhecimento
+- **Módulo** - Conjunto de lições sobre um tema
+- **Lição** - Unidade de aprendizado (vídeo, texto ou quiz)
+- **Draft** - Rascunho (não publicado)
+- **Published** - Publicado (visível para todos)
+
+## B. Atalhos de Teclado
+
+**Player de vídeo:**
+- `Space` - Play/Pause
+- `←` - Voltar 10 segundos
+- `→` - Avançar 10 segundos
+- `↑` - Aumentar volume
+- `↓` - Diminuir volume
+- `F` - Tela cheia
+- `M` - Mudo
+- `1-9` - Pular para % do vídeo
+
+**Navegação:**
+- `Ctrl + K` - Buscar cursos
+- `G então H` - Ir para Home
+- `G então C` - Ir para Cursos
+- `G então P` - Ir para Perfil
+
+---
+
+## C. Requisitos Técnicos
+
+**Navegador:**
+- Chrome 90+
+- Firefox 88+
+- Safari 14+
+- Edge 90+
+
+**Internet:**
+- Mínimo: 2 Mbps
+- Recomendado: 5 Mbps (para vídeos HD)
+
+**Dispositivo:**
+- Desktop/Laptop
+- Tablet (iOS 13+, Android 8+)
+- Smartphone (iOS 13+, Android 8+)
+
+---
+
+**Fim da documentação do usuário** 🎉

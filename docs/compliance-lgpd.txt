@@ -1,0 +1,883 @@
+# 🔒 EXTRATA ACADEMY - Compliance e LGPD
+
+## 📋 Overview
+
+Este documento estabelece as políticas e procedimentos para garantir **compliance total com a LGPD** (Lei Geral de Proteção de Dados - Lei 13.709/2018) no Extrata Academy.
+
+**Objetivo**: Proteger os dados pessoais dos usuários e garantir conformidade legal.
+
+---
+
+## 🎯 Princípios da LGPD
+
+O Extrata Academy segue os 10 princípios estabelecidos pela LGPD:
+
+1. ✅ **Finalidade** - Coleta para propósitos legítimos e específicos
+2. ✅ **Adequação** - Compatibilidade com finalidades informadas
+3. ✅ **Necessidade** - Limitação ao mínimo necessário
+4. ✅ **Livre acesso** - Garantia de consulta facilitada
+5. ✅ **Qualidade dos dados** - Exatidão e atualização
+6. ✅ **Transparência** - Informações claras e acessíveis
+7. ✅ **Segurança** - Medidas técnicas e administrativas
+8. ✅ **Prevenção** - Medidas para evitar danos
+9. ✅ **Não discriminação** - Impossibilidade de uso discriminatório
+10. ✅ **Responsabilização** - Demonstração de conformidade
+
+---
+
+## 📊 Mapeamento de Dados Pessoais
+
+### Dados Coletados
+
+#### Dados Pessoais Básicos
+| Dado | Tipo | Finalidade | Base Legal | Retenção |
+|------|------|------------|------------|----------|
+| Nome completo | Identificação | Identificar usuário | Execução de contrato | Até exclusão da conta |
+| Email | Contato | Comunicação, login | Execução de contrato | Até exclusão da conta |
+| CPF | Identificação | Validação, certificados | Obrigação legal | 5 anos após exclusão* |
+| Telefone | Contato | Comunicação (opcional) | Consentimento | Até revogação |
+| Avatar/foto | Identificação | Perfil do usuário | Consentimento | Até revogação |
+
+*Certificados devem ser mantidos por obrigação legal
+
+#### Dados de Navegação e Uso
+| Dado | Finalidade | Base Legal | Retenção |
+|------|------------|------------|----------|
+| IP de acesso | Segurança, auditoria | Legítimo interesse | 6 meses |
+| Logs de atividade | Auditoria, troubleshooting | Legítimo interesse | 90 dias |
+| Cookies técnicos | Funcionamento do sistema | Legítimo interesse | Sessão |
+| Progresso em cursos | Funcionalidade core | Execução de contrato | Até conclusão + 2 anos |
+| Notas de quizzes | Avaliação, certificados | Execução de contrato | Até conclusão + 2 anos |
+| Tempo de estudo | Analytics, gamificação | Legítimo interesse | Até exclusão da conta |
+
+#### Dados Sensíveis (Não Coletamos)
+- ❌ Origem racial ou étnica
+- ❌ Convicção religiosa
+- ❌ Opinião política
+- ❌ Filiação sindical
+- ❌ Dados de saúde
+- ❌ Dados genéticos/biométricos
+- ❌ Vida sexual
+
+### Base Legal por Categoria
+
+```typescript
+// src/compliance/data-processing-bases.ts
+export enum LegalBasis {
+  CONSENT = 'consentimento',              // Art. 7º, I
+  CONTRACT = 'execucao_de_contrato',      // Art. 7º, V
+  LEGAL_OBLIGATION = 'obrigacao_legal',   // Art. 7º, II
+  LEGITIMATE_INTEREST = 'legítimo_interesse', // Art. 7º, IX
+  PUBLIC_INTEREST = 'interesse_publico',  // Art. 7º, VIII
+}
+
+export const DATA_PROCESSING_REGISTRY = {
+  'user.name': {
+    purpose: 'Identificação do usuário',
+    legal_basis: LegalBasis.CONTRACT,
+    retention: 'Até exclusão da conta',
+  },
+  'user.cpf': {
+    purpose: 'Validação de identidade para certificados',
+    legal_basis: LegalBasis.LEGAL_OBLIGATION,
+    retention: '5 anos após exclusão',
+  },
+  'activity.logs': {
+    purpose: 'Auditoria e segurança',
+    legal_basis: LegalBasis.LEGITIMATE_INTEREST,
+    retention: '90 dias',
+    legitimate_interest_assessment: 'Necessário para garantir segurança do sistema',
+  },
+};
+```
+
+---
+
+## 📜 Política de Privacidade
+
+### Template para o Site
+
+```markdown
+# Política de Privacidade - Extrata Academy
+
+**Última atualização**: 06/10/2025
+
+## 1. Quem Somos
+
+O Extrata Academy é uma plataforma de capacitação online desenvolvida por [NOME DA EMPRESA], com sede em [ENDEREÇO], CNPJ [NÚMERO].
+
+**Encarregado de Dados (DPO)**: [NOME]  
+**Contato**: privacidade@extrata.gov.br  
+**Telefone**: [NÚMERO]
+
+## 2. Dados que Coletamos
+
+### 2.1. Dados fornecidos por você
+- **Cadastro**: nome, email, CPF (para certificados)
+- **Perfil**: foto, telefone (opcional)
+- **Preferências**: idioma, notificações
+
+### 2.2. Dados coletados automaticamente
+- **Técnicos**: IP, navegador, dispositivo
+- **Uso**: páginas visitadas, tempo de estudo, progresso
+- **Cookies**: para funcionamento do sistema (ver seção 8)
+
+### 2.3. Dados que NÃO coletamos
+Não coletamos dados sensíveis como origem racial, convicções religiosas, opiniões políticas, dados de saúde ou vida sexual.
+
+## 3. Como Usamos seus Dados
+
+| Finalidade | Base Legal | Dados Utilizados |
+|------------|------------|------------------|
+| Fornecer acesso à plataforma | Execução de contrato | Nome, email, senha |
+| Acompanhar seu progresso | Execução de contrato | Progresso, notas |
+| Emitir certificados | Obrigação legal | Nome, CPF, conclusão |
+| Enviar notificações | Consentimento | Email, telefone |
+| Melhorar a plataforma | Legítimo interesse | Dados de uso agregados |
+| Garantir segurança | Legítimo interesse | Logs, IP |
+
+## 4. Compartilhamento de Dados
+
+Seus dados podem ser compartilhados com:
+
+✅ **Extrata (Sistema Principal)** - Para autenticação e sincronização  
+✅ **Fornecedores de infraestrutura** - AWS, Cloudflare (ver lista completa abaixo)  
+✅ **Autoridades competentes** - Quando exigido por lei
+
+❌ **NÃO vendemos seus dados**  
+❌ **NÃO compartilhamos para marketing**
+
+### Fornecedores e Subprocessadores
+
+| Fornecedor | Serviço | Localização | Garantias |
+|------------|---------|-------------|-----------|
+| AWS | Hospedagem | EUA | Cláusulas contratuais padrão |
+| Cloudflare | CDN, segurança | EUA | Cláusulas contratuais padrão |
+| SendGrid | Emails transacionais | EUA | DPA assinado |
+
+## 5. Seus Direitos (Art. 18 da LGPD)
+
+Você tem direito a:
+
+1. ✅ **Confirmação e acesso** - Saber se tratamos seus dados
+2. ✅ **Correção** - Corrigir dados incompletos ou desatualizados
+3. ✅ **Anonimização, bloqueio ou eliminação** - De dados desnecessários
+4. ✅ **Portabilidade** - Receber seus dados em formato estruturado
+5. ✅ **Eliminação** - Excluir dados tratados com base em consentimento
+6. ✅ **Informação sobre compartilhamento** - Saber com quem compartilhamos
+7. ✅ **Informação sobre recusa** - Consequências de não fornecer dados
+8. ✅ **Revogação do consentimento** - Retirar consentimento a qualquer momento
+
+### Como Exercer seus Direitos
+
+📧 **Email**: privacidade@extrata.gov.br  
+📱 **Telefone**: [NÚMERO]  
+🌐 **Portal**: https://academy.extrata.gov.br/privacidade
+
+**Prazo de resposta**: 15 dias
+
+## 6. Segurança dos Dados
+
+Implementamos medidas técnicas e organizacionais:
+
+🔒 **Criptografia** - TLS 1.3 em trânsito, AES-256 em repouso  
+🔐 **Autenticação** - SSO via Keycloak, MFA disponível  
+🛡️ **Controle de acesso** - Princípio do menor privilégio  
+📊 **Monitoramento** - Logs de auditoria, alertas automáticos  
+🔄 **Backups** - Diários, criptografados, testados mensalmente  
+🎓 **Treinamento** - Equipe capacitada em LGPD
+
+## 7. Retenção de Dados
+
+| Tipo de Dado | Período de Retenção |
+|--------------|---------------------|
+| Cadastro e perfil | Até exclusão da conta |
+| Progresso de cursos | Até conclusão + 2 anos |
+| Certificados (CPF) | 5 anos após emissão |
+| Logs de acesso | 90 dias |
+| Logs de auditoria | 5 anos |
+
+Após o período, os dados são anonimizados ou excluídos permanentemente.
+
+## 8. Cookies
+
+### Cookies Técnicos (Necessários)
+- `academy_session` - Mantém você logado
+- `csrf_token` - Proteção contra CSRF
+
+### Cookies de Preferências
+- `theme` - Tema claro/escuro
+- `language` - Idioma preferido
+
+Não utilizamos cookies de marketing ou rastreamento de terceiros.
+
+## 9. Menores de Idade
+
+O Extrata Academy é destinado a maiores de 18 anos. Não coletamos intencionalmente dados de menores. Se identificarmos, excluiremos imediatamente.
+
+## 10. Transferência Internacional
+
+Alguns dados podem ser armazenados em servidores fora do Brasil (ex: AWS US). Garantimos:
+- ✅ Cláusulas contratuais padrão aprovadas pela UE
+- ✅ Nível adequado de proteção
+- ✅ Seus direitos permanecem garantidos
+
+## 11. Alterações nesta Política
+
+Podemos atualizar esta política. Notificaremos sobre mudanças significativas por email e no sistema.
+
+## 12. Contato
+
+**Encarregado de Dados (DPO)**: [NOME]  
+**Email**: privacidade@extrata.gov.br  
+**Endereço**: [ENDEREÇO COMPLETO]
+
+**ANPD** - Autoridade Nacional de Proteção de Dados  
+https://www.gov.br/anpd
+```
+
+---
+
+## 📄 Termos de Uso
+
+### Template
+
+```markdown
+# Termos de Uso - Extrata Academy
+
+**Última atualização**: 06/10/2025
+
+Ao acessar e usar o Extrata Academy, você concorda com estes Termos de Uso.
+
+## 1. Aceitação dos Termos
+
+Ao criar uma conta, você declara:
+- ✅ Ter no mínimo 18 anos
+- ✅ Ter lido e concordado com estes termos
+- ✅ Ter lido e concordado com a Política de Privacidade
+- ✅ Fornecer informações verdadeiras e atualizadas
+
+## 2. Descrição do Serviço
+
+O Extrata Academy é uma plataforma de ensino online que oferece:
+- Cursos sobre o sistema Extrata
+- Avaliações e certificados
+- Gamificação e rankings
+- Suporte técnico
+
+## 3. Responsabilidades do Usuário
+
+Você se compromete a:
+- ✅ Manter suas credenciais seguras
+- ✅ Não compartilhar sua conta
+- ✅ Não usar o sistema para fins ilícitos
+- ✅ Respeitar direitos autorais dos conteúdos
+- ✅ Não tentar burlar o sistema de avaliação
+
+## 4. Propriedade Intelectual
+
+Todo o conteúdo (vídeos, textos, quizzes) é propriedade de [NOME DA EMPRESA] e protegido por direitos autorais.
+
+Você pode:
+- ✅ Assistir e estudar o conteúdo
+- ✅ Baixar certificados emitidos para você
+
+Você NÃO pode:
+- ❌ Copiar, distribuir ou revender o conteúdo
+- ❌ Usar conteúdo fora do contexto da plataforma
+- ❌ Fazer engenharia reversa do sistema
+
+## 5. Certificados
+
+Certificados são emitidos automaticamente ao:
+- Completar 100% do curso
+- Obter nota mínima em avaliações (quando aplicável)
+
+Certificados incluem:
+- Nome do aluno
+- CPF (para validação)
+- Nome do curso
+- Carga horária
+- Data de conclusão
+- QR Code de validação
+
+## 6. Suspensão e Cancelamento
+
+Podemos suspender ou cancelar sua conta se:
+- Violar estes termos
+- Usar o sistema de forma abusiva
+- Fornecer informações falsas
+- Por determinação legal
+
+## 7. Limitação de Responsabilidade
+
+O Extrata Academy não se responsabiliza por:
+- Interrupções temporárias do serviço
+- Perda de dados por falha do usuário
+- Uso indevido por terceiros com suas credenciais
+- Danos indiretos ou consequenciais
+
+## 8. Modificações
+
+Reservamo-nos o direito de modificar estes termos. Você será notificado por email sobre mudanças significativas.
+
+## 9. Lei Aplicável
+
+Estes termos são regidos pelas leis brasileiras. Foro: [CIDADE/UF].
+
+## 10. Contato
+
+Para dúvidas sobre estes termos:  
+📧 suporte@extrata.gov.br  
+📞 [TELEFONE]
+```
+
+---
+
+## ✅ Consentimento
+
+### Implementação no Sistema
+
+```typescript
+// src/compliance/consent.service.ts
+export interface ConsentRecord {
+  user_id: string;
+  consent_type: 'terms' | 'privacy' | 'notifications' | 'marketing';
+  granted: boolean;
+  version: string; // Versão do documento aceito
+  timestamp: Date;
+  ip_address: string;
+  user_agent: string;
+}
+
+@Injectable()
+export class ConsentService {
+  async recordConsent(data: ConsentRecord) {
+    // Salvar no banco para auditoria
+    await this.db.consents.create(data);
+    
+    // Também logar para imutabilidade
+    this.logger.log('consent_granted', data);
+  }
+
+  async checkConsent(userId: string, type: string): Promise<boolean> {
+    const latest = await this.db.consents.findOne({
+      where: { user_id: userId, consent_type: type },
+      order: { timestamp: 'DESC' },
+    });
+
+    return latest?.granted ?? false;
+  }
+
+  async revokeConsent(userId: string, type: string) {
+    await this.recordConsent({
+      user_id: userId,
+      consent_type: type as any,
+      granted: false,
+      version: CURRENT_TERMS_VERSION,
+      timestamp: new Date(),
+      ip_address: '...', // From request
+      user_agent: '...', // From request
+    });
+  }
+}
+```
+
+### UI de Consentimento
+
+```tsx
+// src/components/ConsentModal.tsx
+export function ConsentModal({ user }: { user: User }) {
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
+
+  async function handleAccept() {
+    await fetch('/api/consent', {
+      method: 'POST',
+      body: JSON.stringify({
+        terms: acceptedTerms,
+        privacy: acceptedPrivacy,
+      }),
+    });
+    
+    // Redirecionar para dashboard
+  }
+
+  return (
+    <Modal>
+      <h2>Bem-vindo ao Extrata Academy</h2>
+      <p>Para continuar, precisamos do seu consentimento:</p>
+      
+      <Checkbox
+        checked={acceptedTerms}
+        onChange={setAcceptedTerms}
+      >
+        Li e concordo com os{' '}
+        <a href="/terms" target="_blank">Termos de Uso</a>
+      </Checkbox>
+      
+      <Checkbox
+        checked={acceptedPrivacy}
+        onChange={setAcceptedPrivacy}
+      >
+        Li e concordo com a{' '}
+        <a href="/privacy" target="_blank">Política de Privacidade</a>
+      </Checkbox>
+      
+      <Button
+        disabled={!acceptedTerms || !acceptedPrivacy}
+        onClick={handleAccept}
+      >
+        Aceitar e Continuar
+      </Button>
+      
+      <small>
+        Você pode revogar seu consentimento a qualquer momento em
+        Configurações → Privacidade
+      </small>
+    </Modal>
+  );
+}
+```
+
+---
+
+## 🔍 Direitos do Titular
+
+### Portal de Privacidade
+
+```tsx
+// src/app/privacy/page.tsx
+export default function PrivacyPortal() {
+  const { user } = useAuth();
+
+  return (
+    <div>
+      <h1>Meus Dados e Privacidade</h1>
+
+      {/* Acesso aos dados */}
+      <Section>
+        <h2>📄 Acessar Meus Dados</h2>
+        <p>Baixe uma cópia de todos os seus dados</p>
+        <Button onClick={requestDataExport}>
+          Solicitar Exportação
+        </Button>
+        <small>Você receberá um email em até 48h</small>
+      </Section>
+
+      {/* Correção */}
+      <Section>
+        <h2>✏️ Corrigir Dados</h2>
+        <p>Atualize suas informações</p>
+        <Button onClick={() => router.push('/profile/edit')}>
+          Editar Perfil
+        </Button>
+      </Section>
+
+      {/* Exclusão */}
+      <Section>
+        <h2>🗑️ Excluir Conta</h2>
+        <p>Excluir permanentemente sua conta e dados</p>
+        <Alert variant="warning">
+          Esta ação é irreversível. Certificados emitidos serão mantidos
+          por obrigação legal.
+        </Alert>
+        <Button variant="danger" onClick={requestAccountDeletion}>
+          Solicitar Exclusão
+        </Button>
+      </Section>
+
+      {/* Portabilidade */}
+      <Section>
+        <h2>📦 Portabilidade</h2>
+        <p>Exportar seus dados em formato legível por máquina</p>
+        <Button onClick={requestDataPortability}>
+          Exportar Dados (JSON)
+        </Button>
+      </Section>
+
+      {/* Histórico de consentimentos */}
+      <Section>
+        <h2>📜 Histórico de Consentimentos</h2>
+        <ConsentHistory userId={user.id} />
+      </Section>
+
+      {/* Compartilhamento */}
+      <Section>
+        <h2>🔗 Compartilhamento de Dados</h2>
+        <p>Com quem compartilhamos seus dados:</p>
+        <ul>
+          <li>Extrata (sistema principal) - Sincronização</li>
+          <li>AWS - Hospedagem</li>
+          <li>SendGrid - Emails transacionais</li>
+        </ul>
+        <Button variant="link" onClick={() => window.open('/privacy#section-4')}>
+          Ver detalhes na Política de Privacidade
+        </Button>
+      </Section>
+
+      {/* Contato DPO */}
+      <Section>
+        <h2>📧 Falar com o Encarregado de Dados</h2>
+        <p>Para dúvidas ou solicitações relacionadas aos seus dados:</p>
+        <ContactForm dpoEmail="privacidade@extrata.gov.br" />
+      </Section>
+    </div>
+  );
+}
+```
+
+### Implementação de Direitos
+
+```typescript
+// src/compliance/rights.service.ts
+@Injectable()
+export class DataSubjectRightsService {
+  // Direito de acesso (Art. 18, II)
+  async exportUserData(userId: string): Promise<string> {
+    const user = await this.usersRepo.findOne(userId);
+    const enrollments = await this.enrollmentsRepo.find({ user_id: userId });
+    const progress = await this.progressRepo.find({ user_id: userId });
+    const certificates = await this.certificatesRepo.find({ user_id: userId });
+    const consents = await this.consentsRepo.find({ user_id: userId });
+
+    const exportData = {
+      user,
+      enrollments,
+      progress,
+      certificates,
+      consents,
+      exported_at: new Date().toISOString(),
+    };
+
+    // Salvar em S3 e enviar link por email
+    const fileUrl = await this.s3.upload(
+      `exports/${userId}-${Date.now()}.json`,
+      JSON.stringify(exportData, null, 2),
+    );
+
+    await this.emailService.send({
+      to: user.email,
+      subject: 'Seus dados do Extrata Academy',
+      body: `Seus dados estão disponíveis em: ${fileUrl}`,
+    });
+
+    return fileUrl;
+  }
+
+  // Direito de portabilidade (Art. 18, V)
+  async exportPortableData(userId: string): Promise<object> {
+    // Formato legível por máquina (JSON)
+    return {
+      user: await this.getUserPortableData(userId),
+      courses: await this.getCoursesPortableData(userId),
+      achievements: await this.getAchievementsPortableData(userId),
+    };
+  }
+
+  // Direito de eliminação (Art. 18, VI)
+  async deleteUserData(userId: string) {
+    const user = await this.usersRepo.findOne(userId);
+
+    // 1. Anonimizar dados pessoais
+    await this.usersRepo.update(userId, {
+      name: `Usuário Excluído ${userId.slice(0, 8)}`,
+      email: `deleted-${userId}@anonymized.local`,
+      cpf: null,
+      phone: null,
+      avatar_url: null,
+      is_active: false,
+      deleted_at: new Date(),
+    });
+
+    // 2. Manter dados necessários por lei (certificados com CPF)
+    // Esses não são excluídos
+
+    // 3. Excluir progresso e dados de uso
+    await this.progressRepo.delete({ user_id: userId });
+    
+    // 4. Logar exclusão para auditoria
+    this.logger.log('user_deleted', {
+      user_id: userId,
+      email: user.email,
+      deleted_at: new Date(),
+      deleted_by: userId,
+    });
+
+    // 5. Notificar DPO
+    await this.notifyDPO({
+      event: 'USER_DELETION',
+      user_id: userId,
+      timestamp: new Date(),
+    });
+  }
+
+  // Direito de correção (Art. 18, III)
+  async correctUserData(userId: string, corrections: Partial<User>) {
+    await this.usersRepo.update(userId, corrections);
+    
+    // Logar correção
+    this.logger.log('data_corrected', {
+      user_id: userId,
+      fields: Object.keys(corrections),
+      timestamp: new Date(),
+    });
+  }
+}
+```
+
+---
+
+## 📋 Logs de Auditoria
+
+### Implementação
+
+```typescript
+// src/compliance/audit-logger.ts
+export interface AuditLogEntry {
+  timestamp: Date;
+  event_type: string;
+  user_id: string;
+  resource_type: string;
+  resource_id: string;
+  action: 'CREATE' | 'READ' | 'UPDATE' | 'DELETE';
+  ip_address: string;
+  user_agent: string;
+  metadata?: Record<string, any>;
+}
+
+@Injectable()
+export class AuditLogger {
+  async log(entry: Omit<AuditLogEntry, 'timestamp'>) {
+    // Salvar em tabela específica
+    await this.db.audit_logs.create({
+      ...entry,
+      timestamp: new Date(),
+    });
+
+    // Também enviar para sistema de logs centralizado
+    this.logger.info('audit', entry);
+
+    // Se for ação sensível, alertar
+    if (this.isSensitiveAction(entry)) {
+      await this.alertSecurityTeam(entry);
+    }
+  }
+
+  private isSensitiveAction(entry: AuditLogEntry): boolean {
+    return [
+      'user_deleted',
+      'role_changed',
+      'admin_access',
+      'data_exported',
+    ].includes(entry.event_type);
+  }
+}
+
+// Uso em controllers
+@Controller('users')
+export class UsersController {
+  @Delete(':id')
+  @UseGuards(AdminGuard)
+  async deleteUser(
+    @Param('id') userId: string,
+    @CurrentUser() admin: User,
+    @Ip() ip: string,
+  ) {
+    await this.usersService.delete(userId);
+    
+    // Logar para auditoria
+    await this.auditLogger.log({
+      event_type: 'user_deleted',
+      user_id: admin.id,
+      resource_type: 'user',
+      resource_id: userId,
+      action: 'DELETE',
+      ip_address: ip,
+      user_agent: req.headers['user-agent'],
+    });
+  }
+}
+```
+
+### Relatório de Auditoria
+
+```sql
+-- Query para relatório de acessos aos dados de um usuário
+SELECT 
+  al.timestamp,
+  al.event_type,
+  u.name as accessed_by,
+  al.action,
+  al.ip_address
+FROM audit_logs al
+JOIN users u ON al.user_id = u.id
+WHERE al.resource_type = 'user'
+  AND al.resource_id = $target_user_id
+  AND al.timestamp >= NOW() - INTERVAL '90 days'
+ORDER BY al.timestamp DESC;
+```
+
+---
+
+## 🚨 Incident Response Plan
+
+### Data Breach Protocol
+
+```typescript
+// src/compliance/incident-response.ts
+export class IncidentResponseService {
+  async reportDataBreach(incident: DataBreachIncident) {
+    // 1. Contenção imediata
+    await this.containBreach(incident);
+    
+    // 2. Avaliar severidade
+    const severity = await this.assessSeverity(incident);
+    
+    // 3. Notificar DPO
+    await this.notifyDPO(incident, severity);
+    
+    // 4. Se alta severidade, notificar ANPD (72h)
+    if (severity === 'HIGH' || severity === 'CRITICAL') {
+      await this.notifyANPD(incident);
+    }
+    
+    // 5. Notificar usuários afetados
+    await this.notifyAffectedUsers(incident);
+    
+    // 6. Documentar incidente
+    await this.documentIncident(incident);
+    
+    // 7. Implementar correções
+    await this.implementCorrections(incident);
+  }
+
+  private async notifyANPD(incident: DataBreachIncident) {
+    // Prazo: 72 horas após conhecimento do incidente
+    const report = {
+      incident_date: incident.detected_at,
+      nature_of_breach: incident.type,
+      affected_data_categories: incident.affected_data,
+      number_of_affected_users: incident.affected_users_count,
+      likely_consequences: incident.consequences,
+      measures_taken: incident.remediation,
+      dpo_contact: DPO_CONTACT,
+    };
+
+    // Enviar para ANPD via formulário oficial
+    await this.submitToANPD(report);
+  }
+
+  private async notifyAffectedUsers(incident: DataBreachIncident) {
+    const users = await this.getAffectedUsers(incident);
+    
+    for (const user of users) {
+      await this.emailService.send({
+        to: user.email,
+        subject: 'IMPORTANTE: Incidente de Segurança - Extrata Academy',
+        body: this.generateBreachNotificationEmail(user, incident),
+      });
+    }
+  }
+}
+```
+
+### Notification Template
+
+```
+Assunto: IMPORTANTE: Incidente de Segurança - Extrata Academy
+
+Prezado(a) [NOME],
+
+Estamos entrando em contato para informar sobre um incidente de segurança que pode ter afetado seus dados pessoais no Extrata Academy.
+
+O QUE ACONTECEU?
+[Descrição do incidente]
+
+QUAIS DADOS FORAM AFETADOS?
+[Lista de dados afetados]
+
+O QUE ESTAMOS FAZENDO?
+- Investigação completa do incidente
+- Notificação à ANPD (Autoridade Nacional de Proteção de Dados)
+- Implementação de medidas adicionais de segurança
+- [Outras ações]
+
+O QUE VOCÊ DEVE FAZER?
+- Trocar sua senha imediatamente
+- Ativar autenticação de dois fatores
+- Monitorar suas contas
+- [Outras recomendações]
+
+SEUS DIREITOS:
+Você tem o direito de:
+- Obter mais informações sobre o incidente
+- Revogar seu consentimento
+- Solicitar a exclusão de seus dados
+
+CONTATO:
+Para dúvidas ou mais informações:
+- Email: privacidade@extrata.gov.br
+- Telefone: [NÚMERO]
+
+Pedimos sinceras desculpas pelo ocorrido e reafirmamos nosso compromisso com a proteção dos seus dados.
+
+Atenciosamente,
+Equipe Extrata Academy
+```
+
+---
+
+## ✅ Checklist de Compliance
+
+### Pré-lançamento
+- [ ] DPO (Encarregado de Dados) nomeado
+- [ ] Política de Privacidade publicada
+- [ ] Termos de Uso publicados
+- [ ] Fluxo de consentimento implementado
+- [ ] Portal de privacidade funcional
+- [ ] Logs de auditoria implementados
+- [ ] Processo de exclusão de dados testado
+- [ ] Exportação de dados testada
+- [ ] Incident response plan documentado
+- [ ] Equipe treinada em LGPD
+- [ ] DPIAs (Data Protection Impact Assessments) realizadas
+
+### Operacional (Contínuo)
+- [ ] Revisão trimestral da política de privacidade
+- [ ] Auditoria semestral de segurança
+- [ ] Treinamento anual da equipe
+- [ ] Teste anual do incident response plan
+- [ ] Revisão de fornecedores (DPAs atualizados)
+- [ ] Monitoramento de solicitações de titulares
+- [ ] Registro de tratamento de dados atualizado
+
+### Documentação
+- [ ] Registro de atividades de tratamento (ROPA)
+- [ ] Contratos com processadores de dados (DPAs)
+- [ ] Políticas internas de segurança
+- [ ] Análises de legítimo interesse (LIAs)
+- [ ] Avaliações de impacto (DPIAs)
+- [ ] Histórico de incidentes
+- [ ] Histórico de solicitações de titulares
+
+---
+
+## 📞 Contatos Importantes
+
+**Encarregado de Dados (DPO)**  
+Nome: [A DEFINIR]  
+Email: privacidade@extrata.gov.br  
+Telefone: [A DEFINIR]
+
+**ANPD - Autoridade Nacional de Proteção de Dados**  
+Website: https://www.gov.br/anpd  
+Ouvidoria: https://falabr.cgu.gov.br/
+
+**Equipe de Segurança**  
+Email: security@extrata.gov.br  
+Telefone emergencial: [A DEFINIR]
+
+---
+
+**Próximo documento**: [13-OBSERVABILITY.md](./13-OBSERVABILITY.md)

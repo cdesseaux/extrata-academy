@@ -1,0 +1,507 @@
+# 🤝 Contributing to Extrata Academy
+
+Obrigado por considerar contribuir para o Extrata Academy! Este documento fornece guidelines para contribuir com o projeto.
+
+---
+
+## 📋 Código de Conduta
+
+### Nossos Valores
+- **Respeito**: Trate todos com respeito e profissionalismo
+- **Colaboração**: Trabalhe em equipe e compartilhe conhecimento
+- **Qualidade**: Mantenha altos padrões de código e documentação
+- **Transparência**: Comunique-se claramente sobre mudanças
+
+### Comportamento Esperado
+- ✅ Seja respeitoso e inclusivo
+- ✅ Aceite feedback construtivo
+- ✅ Foque no que é melhor para a comunidade
+- ✅ Demonstre empatia com outros membros
+
+### Comportamento Inaceitável
+- ❌ Linguagem ofensiva ou discriminatória
+- ❌ Ataques pessoais ou trolling
+- ❌ Assédio público ou privado
+- ❌ Publicar informações privadas de outros sem permissão
+
+---
+
+## 🚀 Como Contribuir
+
+### 1. Reportar Bugs
+
+**Antes de reportar:**
+- Verifique se o bug já não foi reportado nas [Issues](https://github.com/your-org/extrata-academy/issues)
+- Confirme que é realmente um bug (não uma feature request)
+- Colete informações sobre o ambiente (versão, SO, browser)
+
+**Como reportar:**
+```markdown
+**Descrição do Bug**
+Descrição clara do que está acontecendo.
+
+**Passos para Reproduzir**
+1. Vá para '...'
+2. Clique em '....'
+3. Veja o erro
+
+**Comportamento Esperado**
+O que deveria acontecer.
+
+**Screenshots**
+Se aplicável, adicione screenshots.
+
+**Ambiente**
+- OS: [e.g. macOS 14.0]
+- Browser: [e.g. Chrome 120]
+- Node: [e.g. 20.10.0]
+- Version: [e.g. 1.0.0]
+
+**Informações Adicionais**
+Qualquer contexto adicional.
+```
+
+### 2. Sugerir Features
+
+**Antes de sugerir:**
+- Verifique se a feature já não foi sugerida
+- Confirme que alinha com os objetivos do projeto
+- Pense em como beneficiaria outros usuários
+
+**Como sugerir:**
+```markdown
+**Problema que Resolve**
+Descrição do problema ou necessidade.
+
+**Solução Proposta**
+Como você imagina que isso deveria funcionar.
+
+**Alternativas Consideradas**
+Outras abordagens que você pensou.
+
+**Informações Adicionais**
+Mockups, exemplos, referências, etc.
+```
+
+### 3. Contribuir com Código
+
+#### Setup do Ambiente
+
+```bash
+# Fork o repositório
+# Clone seu fork
+git clone https://github.com/your-username/extrata-academy.git
+cd extrata-academy
+
+# Adicione o upstream
+git remote add upstream https://github.com/your-org/extrata-academy.git
+
+# Setup ambiente local
+./scripts/setup-dev.sh
+```
+
+#### Workflow de Desenvolvimento
+
+```bash
+# 1. Crie uma branch para sua feature
+git checkout -b feature/nome-da-feature
+
+# 2. Faça suas alterações
+# - Escreva código limpo e testável
+# - Siga os padrões do projeto
+# - Adicione testes
+
+# 3. Rode os testes
+cd backend && npm run test
+cd ../frontend && npm run test
+
+# 4. Commit suas mudanças (Conventional Commits)
+git add .
+git commit -m "feat: adiciona funcionalidade X"
+
+# 5. Push para seu fork
+git push origin feature/nome-da-feature
+
+# 6. Abra um Pull Request
+```
+
+---
+
+## 📝 Padrões de Código
+
+### Commits (Conventional Commits)
+
+```bash
+# Formato
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+
+# Types
+feat:      Nova feature
+fix:       Bug fix
+docs:      Mudanças em documentação
+style:     Formatação (sem mudança de código)
+refactor:  Refatoração de código
+test:      Adicionar/modificar testes
+chore:     Tarefas de manutenção
+
+# Exemplos
+feat(courses): add video player component
+fix(auth): resolve token expiration issue
+docs(readme): update installation instructions
+refactor(api): simplify user service logic
+test(courses): add unit tests for course service
+```
+
+### Branches
+
+```bash
+# Padrão
+<type>/<descrição-curta>
+
+# Examples
+feature/add-quiz-system
+bugfix/fix-login-redirect
+hotfix/urgent-security-patch
+release/v1.0.0
+docs/update-api-docs
+```
+
+### Code Style
+
+**TypeScript:**
+```typescript
+// ✅ BOM
+interface UserResponse {
+  id: string;
+  name: string;
+  email: string;
+}
+
+async function getUser(id: string): Promise<UserResponse> {
+  const user = await userRepository.findById(id);
+  
+  if (!user) {
+    throw new NotFoundException('User not found');
+  }
+
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+  };
+}
+
+// ❌ RUIM
+async function getUser(id) {
+  const user = await userRepository.findById(id);
+  return user; // Sem validação, sem tipagem
+}
+```
+
+**React:**
+```typescript
+// ✅ BOM
+interface ButtonProps {
+  variant?: 'primary' | 'secondary';
+  size?: 'sm' | 'md' | 'lg';
+  children: React.ReactNode;
+  onClick?: () => void;
+}
+
+export function Button({ 
+  variant = 'primary', 
+  size = 'md', 
+  children,
+  onClick 
+}: ButtonProps) {
+  return (
+    <button 
+      className={cn('btn', `btn-${variant}`, `btn-${size}`)}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+}
+
+// ❌ RUIM
+export function Button(props) {
+  return <button onClick={props.onClick}>{props.children}</button>;
+}
+```
+
+### Testes
+
+**Coverage mínimo: 80%**
+
+```typescript
+// courses.service.spec.ts
+describe('CoursesService', () => {
+  let service: CoursesService;
+  let repository: CoursesRepository;
+
+  beforeEach(() => {
+    // Setup
+  });
+
+  describe('findAll', () => {
+    it('should return array of courses', async () => {
+      // Arrange
+      const mockCourses = [{ id: '1', title: 'Course 1' }];
+      jest.spyOn(repository, 'findAll').mockResolvedValue(mockCourses);
+
+      // Act
+      const result = await service.findAll({});
+
+      // Assert
+      expect(result).toEqual(mockCourses);
+      expect(repository.findAll).toHaveBeenCalledTimes(1);
+    });
+  });
+});
+```
+
+---
+
+## 🔍 Code Review Process
+
+### Para Reviewers
+
+**O que verificar:**
+- [ ] Código segue os padrões do projeto
+- [ ] Testes adequados foram adicionados
+- [ ] Documentação foi atualizada (se necessário)
+- [ ] Não há código comentado ou debug logs
+- [ ] Performance é aceitável
+- [ ] Segurança não foi comprometida
+- [ ] Acessibilidade foi considerada
+
+**Como dar feedback:**
+```markdown
+# ✅ Feedback Construtivo
+"Boa solução! Considere extrair esta lógica para uma função 
+separada para melhorar a testabilidade."
+
+# ❌ Feedback Não Construtivo
+"Este código está ruim."
+```
+
+### Para Contributors
+
+**Preparando PR:**
+- Descrição clara do que foi feito e por quê
+- Screenshots/GIFs para mudanças visuais
+- Referência à issue relacionada
+- Checklist preenchido
+- CI/CD passando (todos os testes)
+
+**Template de PR:**
+```markdown
+## Descrição
+Breve descrição das mudanças.
+
+## Tipo de Mudança
+- [ ] Bug fix
+- [ ] Nova feature
+- [ ] Breaking change
+- [ ] Documentação
+
+## Como Testar
+1. Passo 1
+2. Passo 2
+3. Verificar que...
+
+## Screenshots
+[Se aplicável]
+
+## Checklist
+- [ ] Código segue style guide
+- [ ] Self-review feito
+- [ ] Comentários adicionados em código complexo
+- [ ] Documentação atualizada
+- [ ] Testes adicionados/atualizados
+- [ ] Todos os testes passam
+- [ ] Sem warnings no console
+
+## Issues Relacionadas
+Closes #123
+```
+
+---
+
+## 📚 Documentação
+
+### Quando Atualizar
+
+- ✅ Novas features ou mudanças de comportamento
+- ✅ Breaking changes
+- ✅ Novos endpoints de API
+- ✅ Mudanças em configuração
+- ✅ Novos requisitos de setup
+
+### Como Documentar
+
+**API Changes:**
+```markdown
+### POST /api/courses
+
+**Request:**
+\`\`\`json
+{
+  "title": "Course Title",
+  "description": "Description"
+}
+\`\`\`
+
+**Response:**
+\`\`\`json
+{
+  "id": "uuid",
+  "title": "Course Title"
+}
+\`\`\`
+```
+
+**Code Examples:**
+```typescript
+/**
+ * Calculates user progress in a course.
+ * 
+ * @param enrollmentId - The enrollment ID
+ * @returns Progress percentage (0-100)
+ * 
+ * @example
+ * ```typescript
+ * const progress = await calculateProgress('enrollment-id');
+ * console.log(progress); // 75.5
+ * ```
+ */
+async function calculateProgress(enrollmentId: string): Promise<number> {
+  // Implementation
+}
+```
+
+---
+
+## 🐛 Debugging Tips
+
+### Backend (NestJS)
+
+```bash
+# Debug mode
+npm run start:debug
+
+# Logs estruturados
+this.logger.debug('Debug message', { context: 'CoursesService' });
+this.logger.log('Info message');
+this.logger.warn('Warning message');
+this.logger.error('Error message', error.stack);
+```
+
+### Frontend (Next.js)
+
+```bash
+# Dev tools
+npm run dev
+
+# React DevTools (browser extension)
+# Redux DevTools (se usando Redux)
+```
+
+### Database
+
+```bash
+# Acessar PostgreSQL
+docker exec -it extrata-academy-postgres psql -U academy -d academy
+
+# Ver queries
+SET log_statement = 'all';
+```
+
+---
+
+## 🚀 Release Process
+
+### Versioning (SemVer)
+
+```
+MAJOR.MINOR.PATCH
+
+MAJOR: Breaking changes
+MINOR: New features (backward compatible)
+PATCH: Bug fixes
+
+Examples:
+1.0.0 → 1.0.1 (bug fix)
+1.0.1 → 1.1.0 (new feature)
+1.1.0 → 2.0.0 (breaking change)
+```
+
+### Criando Release
+
+```bash
+# 1. Update version
+npm version patch|minor|major
+
+# 2. Update CHANGELOG.md
+
+# 3. Create release branch
+git checkout -b release/v1.1.0
+
+# 4. Tag
+git tag -a v1.1.0 -m "Release v1.1.0"
+
+# 5. Push
+git push origin release/v1.1.0 --tags
+
+# 6. Create GitHub Release
+```
+
+---
+
+## ❓ FAQ
+
+### Como faço para...
+
+**Q: Como setup ambiente local?**
+A: Execute `./scripts/setup-dev.sh` (ver QUICKSTART.md)
+
+**Q: Como rodar testes?**
+A: `npm run test` (backend ou frontend)
+
+**Q: Como adicionar uma nova tabela no banco?**
+A: Crie migration: `npm run typeorm migration:generate -- -n AddTableName`
+
+**Q: Como adicionar um novo endpoint?**
+A: Siga docs/07-DEVELOPMENT-GUIDE.md seção "Creating Features"
+
+**Q: Posso usar biblioteca X?**
+A: Verifique com o time primeiro. Preferimos bibliotecas bem mantidas.
+
+**Q: Como reporto uma vulnerabilidade de segurança?**
+A: Email privado para security@extrata.gov.br (NÃO abra issue pública)
+
+---
+
+## 📞 Contato
+
+- **Issues**: [GitHub Issues](https://github.com/your-org/extrata-academy/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/your-org/extrata-academy/discussions)
+- **Email**: dev@extrata.gov.br
+- **Slack**: #extrata-academy (interno)
+
+---
+
+## 📜 Licença
+
+Ao contribuir, você concorda que suas contribuições serão licenciadas sob a mesma licença do projeto (MIT License).
+
+---
+
+**Obrigado por contribuir! 🎉**
+
+Toda contribuição, grande ou pequena, é valiosa e apreciada.
