@@ -20,6 +20,7 @@ import { CertificatesModule } from './certificates/certificates.module';
 import { FilesModule } from './files/files.module';
 import { QuizzesModule } from './quizzes/quizzes.module';
 import { HealthModule } from './health/health.module';
+import { LearningPathsModule } from './learning-paths/learning-paths.module';
 
 @Module({
   imports: [
@@ -64,6 +65,7 @@ import { HealthModule } from './health/health.module';
     FilesModule,
     QuizzesModule,
     HealthModule,
+    LearningPathsModule,
   ],
   controllers: [AppController],
   providers: [
