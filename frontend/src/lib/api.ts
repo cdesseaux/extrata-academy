@@ -1,4 +1,11 @@
+// Use environment variable with fallback
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+
+// Debug: Log the API URL being used (only in development)
+if (process.env.NODE_ENV === 'development') {
+  console.log('🔍 API_BASE_URL:', API_BASE_URL);
+  console.log('🔍 NEXT_PUBLIC_API_URL env var:', process.env.NEXT_PUBLIC_API_URL);
+}
 
 class ApiClient {
   private baseURL: string;
@@ -22,6 +29,9 @@ class ApiClient {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
+    
+    // Debug: Log the constructed URL
+    console.log('🔍 API Request URL:', url);
 
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
@@ -364,6 +374,52 @@ class ApiClient {
     return this.request(`/quizzes/${quizId}/best-attempt`);
   }
 
+  // Learning Paths endpoints
+  async getLearningPaths() {
+    return this.request('/learning-paths');
+  }
+
+  async getLearningPath(id: string) {
+    return this.request(`/learning-paths/${id}`);
+  }
+
+  async createLearningPath(data: any) {
+    return this.request('/learning-paths', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateLearningPath(id: string, data: any) {
+    return this.request(`/learning-paths/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteLearningPath(id: string) {
+    return this.request(`/learning-paths/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async enrollInLearningPath(id: string) {
+    return this.request(`/learning-paths/${id}/enroll`, {
+      method: 'POST',
+    });
+  }
+
+  async getMyLearningPathEnrollment(id: string) {
+    return this.request(`/learning-paths/${id}/enrollment`);
+  }
+
+  async updateMyLearningPathProgress(id: string, progressPercentage: number) {
+    return this.request(`/learning-paths/${id}/progress`, {
+      method: 'PATCH',
+      body: JSON.stringify({ progressPercentage }),
+    });
+  }
+
   // File upload endpoints
   async uploadFile(file: File, type: 'video' | 'pdf' | 'image' | 'thumbnail' | 'avatar' | 'document') {
     const formData = new FormData();
@@ -420,6 +476,36 @@ class ApiClient {
     return this.request('/certificates/generate', {
       method: 'POST',
       body: JSON.stringify({ courseId, completionDate }),
+    });
+  }
+
+  // Gamification endpoints
+  async getUserXP() {
+    return this.request('/gamification/xp');
+  }
+
+  async getUserAchievements() {
+    return this.request('/gamification/achievements');
+  }
+
+  async getLeaderboard() {
+    return this.request('/gamification/leaderboard');
+  }
+
+  async getXPHistory() {
+    return this.request('/gamification/xp-history');
+  }
+
+  async addXP(amount: number, type: string, description?: string, metadata?: any) {
+    return this.request('/gamification/add-xp', {
+      method: 'POST',
+      body: JSON.stringify({ amount, type, description, metadata }),
+    });
+  }
+
+  async updateStreak() {
+    return this.request('/gamification/update-streak', {
+      method: 'POST',
     });
   }
 }

@@ -145,8 +145,8 @@ services:
       # API URLs (public - accessible from browser)
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000/api}
       NEXT_PUBLIC_KEYCLOAK_URL: ${NEXT_PUBLIC_KEYCLOAK_URL:-https://keycloak-hlg.extrata.com.br}
-      NEXT_PUBLIC_KEYCLOAK_REALM: ${KEYCLOAK_REALM:-extrata}
-      NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-academy-frontend}
+      NEXT_PUBLIC_KEYCLOAK_REALM: ${NEXT_PUBLIC_KEYCLOAK_REALM:-extrata}
+      NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: ${NEXT_PUBLIC_KEYCLOAK_CLIENT_ID:-academy-frontend}
       
       # Features flags
       NEXT_PUBLIC_ENABLE_ANALYTICS: ${ENABLE_ANALYTICS:-false}
