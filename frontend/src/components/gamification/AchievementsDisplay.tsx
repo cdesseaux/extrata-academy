@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useAuth } from '@/components/KeycloakProvider';
+import { useAuth } from '@/components/AuthProvider';
 import { apiClient } from '@/lib/api';
 
 interface Achievement {
@@ -39,7 +39,7 @@ export default function AchievementsDisplay() {
 
   const loadAchievements = async () => {
     try {
-      const data = await apiClient.request('/gamification/achievements');
+      const data = await apiClient.getUserAchievements();
       setAchievements(data);
     } catch (error) {
       console.error('Erro ao carregar achievements:', error);

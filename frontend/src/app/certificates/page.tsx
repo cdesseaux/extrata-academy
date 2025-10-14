@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useAuth } from '@/components/KeycloakProvider';
+import { useAuth } from '@/components/AuthProvider';
 import { useRouter } from 'next/navigation';
 import CertificateCard from '@/components/certificates/CertificateCard';
 import { apiClient } from '@/lib/api';

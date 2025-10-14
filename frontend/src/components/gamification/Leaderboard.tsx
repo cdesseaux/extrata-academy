@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useAuth } from '@/components/KeycloakProvider';
+import { useAuth } from '@/components/AuthProvider';
 import { apiClient } from '@/lib/api';
 
 interface User {
@@ -37,7 +37,7 @@ export default function Leaderboard() {
 
   const loadLeaderboard = async () => {
     try {
-      const data = await apiClient.request('/gamification/leaderboard');
+      const data = await apiClient.getLeaderboard();
       setLeaderboard(data);
     } catch (error) {
       console.error('Erro ao carregar leaderboard:', error);

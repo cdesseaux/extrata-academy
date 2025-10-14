@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth } from '@/components/KeycloakProvider';
+import { useAuth } from '@/components/AuthProvider';
 import { apiClient } from '@/lib/api';
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';

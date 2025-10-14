@@ -29,8 +29,7 @@ export default function CertificateValidation({ certificateNumber }: Certificate
   const validateCertificate = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:4000/certificates/validate/${certificateNumber}`);
-      const data = await response.json();
+      const data = await apiClient.validateCertificate(certificateNumber);
 
       if (data.valid) {
         setCertificate(data.certificate);
@@ -181,6 +180,8 @@ export default function CertificateValidation({ certificateNumber }: Certificate
     </div>
   );
 }
+
+
 
 
 

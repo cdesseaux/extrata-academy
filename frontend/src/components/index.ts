@@ -18,7 +18,7 @@ export { QuizResults } from './quizzes/QuizResults';
 export { default as AnimatedCard } from './AnimatedCard';
 export { default as ConnectionStatus } from './ConnectionStatus';
 export { default as FileUpload } from './FileUpload';
-export { default as KeycloakProvider } from './KeycloakProvider';
+export { AuthProvider } from './AuthProvider';
 export { default as LoadingSkeleton } from './LoadingSkeleton';
 export { default as LoadingSpinner } from './LoadingSpinner';
 export { default as PWAInstallPrompt } from './PWAInstallPrompt';

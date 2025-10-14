@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth } from '@/components/KeycloakProvider';
+import { useAuth } from '@/components/AuthProvider';
 import { apiClient } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -12,6 +12,7 @@ import { useGamification } from '@/hooks/useGamification';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { AnimatedCard, FadeIn } from '@/components/AnimatedCard';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
+import Link from 'next/link'
 
 interface Enrollment {
   id: string;
@@ -36,6 +37,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { notifications, removeNotification, addXP, updateStreak } = useGamification();
+  const [paths, setPaths] = useState<any[]>([])
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -60,6 +62,17 @@ export default function Dashboard() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await apiClient.getLearningPaths()
+        setPaths((data || []).slice(0, 3))
+      } catch (e) {
+      }
+    }
+    load()
+  }, [])
 
   if (isLoading || loading) {
     return (
@@ -260,6 +273,33 @@ export default function Dashboard() {
             </div>
           )}
         </div>
+
+        {/* Learning Paths Section */}
+        <section className="mt-8">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold text-gray-900">Trilhas de Aprendizagem</h2>
+            <Link href="/learning-paths" className="text-sm text-blue-600 hover:underline">Ver todas</Link>
+          </div>
+          {paths.length === 0 ? (
+            <div className="text-sm text-gray-600">Nenhuma trilha disponível no momento.</div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {paths.map((p) => (
+                <Link key={p.id} href={`/learning-paths/${p.id}`} className="block bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium text-gray-900">{p.title}</div>
+                      <div className="text-sm text-gray-600 line-clamp-2">{p.description}</div>
+                    </div>
+                    {p.isFeatured ? (
+                      <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">Destaque</span>
+                    ) : null}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
       </main>
 
       {/* Notifications */}

@@ -28,7 +28,7 @@ export default function CertificateCard({ certificate }: CertificateCardProps) {
       setIsDownloading(true);
       
       // Usar o endpoint de download do backend
-      const response = await fetch(`http://localhost:4000/certificates/download/${certificate.certificateNumber}`);
+      const response = await apiClient.downloadCertificate(certificate.certificateNumber);
       
       if (response.ok) {
         const blob = await response.blob();

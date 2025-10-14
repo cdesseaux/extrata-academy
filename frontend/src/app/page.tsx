@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth } from '@/components/KeycloakProvider';
+import { useAuth } from '@/components/AuthProvider';
 
 export default function Home() {
   const { user, isAuthenticated, isLoading, login, logout } = useAuth();

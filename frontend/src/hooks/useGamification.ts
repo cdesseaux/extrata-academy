@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { useAuth } from '@/components/KeycloakProvider';
+import { useAuth } from '@/components/AuthProvider';
 import { apiClient } from '@/lib/api';
 
 interface XPNotification {
@@ -21,15 +21,7 @@ export function useGamification() {
     metadata?: any
   ) => {
     try {
-      const result = await apiClient.request('/gamification/add-xp', {
-        method: 'POST',
-        body: JSON.stringify({
-          amount,
-          type: 'lesson_completed',
-          description,
-          metadata,
-        }),
-      });
+      const result = await apiClient.addXP(amount, 'lesson_completed', description, metadata);
       
       // Adicionar notificação de XP
       const notification: XPNotification = {
@@ -58,9 +50,7 @@ export function useGamification() {
 
   const updateStreak = useCallback(async () => {
     try {
-      await apiClient.request('/gamification/update-streak', {
-        method: 'POST',
-      });
+      await apiClient.updateStreak();
 
       // Adicionar notificação de streak
       const notification: XPNotification = {

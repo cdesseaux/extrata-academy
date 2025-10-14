@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useAuth } from '@/components/KeycloakProvider';
+import { useAuth } from '@/components/AuthProvider';
 import { apiClient } from '@/lib/api';
 
 interface UserXP {
@@ -30,7 +30,7 @@ export default function XPDisplay() {
 
   const loadUserXP = async () => {
     try {
-      const data = await apiClient.request('/gamification/xp');
+      const data = await apiClient.getUserXP();
       setUserXP(data);
     } catch (error) {
       console.error('Erro ao carregar XP:', error);
