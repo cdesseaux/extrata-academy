@@ -3,6 +3,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CoursesService } from './courses.service';
 import { Course } from './entities/course.entity';
+import { User } from '../users/entities/user.entity';
 
 describe('CoursesService', () => {
   let service: CoursesService;
@@ -19,7 +20,7 @@ describe('CoursesService', () => {
     isActive: true,
     isPublished: false,
     instructorId: 'instructor-123',
-    instructor: null,
+    instructor: {} as User,
     modules: [],
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -188,7 +189,7 @@ describe('CoursesService', () => {
     });
 
     it('should return null if course not found', async () => {
-      mockRepository.findOne.mockResolvedValueOnce(null);
+      mockRepository.findOne.mockResolvedValueOnce(null as any);
 
       const result = await service.updateCourseDuration('non-existent');
 

@@ -28,6 +28,12 @@ export class EnrollmentsController {
     return this.enrollmentsService.findByUser(req.user.id);
   }
 
+  @Get('my-enrollments-dev')
+  findMyEnrollmentsDev() {
+    // Rota temporária para desenvolvimento - retorna array vazio
+    return [];
+  }
+
   @Get('course/:courseId')
   @UseGuards(JwtAuthGuard)
   findByCourse(@Param('courseId') courseId: string) {

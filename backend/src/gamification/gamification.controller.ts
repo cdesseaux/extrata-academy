@@ -13,10 +13,22 @@ export class GamificationController {
     return this.gamificationService.getUserXP(req.user.id);
   }
 
+  @Get('xp-dev')
+  async getUserXPDev() {
+    // Rota temporária para desenvolvimento
+    return { totalXP: 0, level: 1, xpToNextLevel: 100 };
+  }
+
   @Get('achievements')
   @UseGuards(JwtAuthGuard)
   async getUserAchievements(@Request() req: any) {
     return this.gamificationService.getUserAchievements(req.user.id);
+  }
+
+  @Get('achievements-dev')
+  async getUserAchievementsDev() {
+    // Rota temporária para desenvolvimento
+    return [];
   }
 
   @Get('leaderboard')
@@ -53,6 +65,8 @@ export class GamificationController {
     return { message: 'Streak updated successfully' };
   }
 }
+
+
 
 
 
