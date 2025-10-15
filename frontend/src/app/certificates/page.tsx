@@ -21,7 +21,7 @@ interface Certificate {
 }
 
 export default function CertificatesPage() {
-  const { user, isAuthenticated, isLoading, getToken } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,7 +46,7 @@ export default function CertificatesPage() {
       const data = await apiClient.getMyCertificates();
       
       setCertificates(data || []);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Erro ao carregar certificados:', err);
       setError('Erro ao carregar certificados');
     } finally {

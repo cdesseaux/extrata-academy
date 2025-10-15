@@ -17,10 +17,10 @@ export default function LearnCoursePage() {
   const courseId = params.id as string;
   const lessonIdFromUrl = searchParams.get('lesson');
 
-  const [course, setCourse] = useState<any>(null);
+  const [course, setCourse] = useState<{ id: string; title: string; description: string } | null>(null);
   const [modules, setModules] = useState<Module[]>([]);
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
-  const [enrollment, setEnrollment] = useState<any>(null);
+  const [enrollment, setEnrollment] = useState<{ id: string; courseId: string; status: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [quiz, setQuiz] = useState<Quiz | null>(null);
@@ -28,6 +28,7 @@ export default function LearnCoursePage() {
 
   useEffect(() => {
     loadCourseData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId]);
 
   useEffect(() => {
@@ -50,6 +51,7 @@ export default function LearnCoursePage() {
       setQuiz(null);
       setQuizMode('results');
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentLesson]);
 
   const loadCourseData = async () => {
@@ -65,10 +67,10 @@ export default function LearnCoursePage() {
       setModules(modulesData);
 
       // Find enrollment for this course
-      const courseEnrollment = enrollmentsData.find((e: any) => e.courseId === courseId);
+      const courseEnrollment = enrollmentsData.find((e: { courseId: string }) => e.courseId === courseId);
       setEnrollment(courseEnrollment);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }
@@ -78,7 +80,7 @@ export default function LearnCoursePage() {
     try {
       const lessonData = await apiClient.getLesson(lessonId);
       setCurrentLesson(lessonData);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error loading lesson:', err);
     }
   };
@@ -88,7 +90,7 @@ export default function LearnCoursePage() {
       const quizData = await apiClient.getQuizByLesson(lessonId);
       setQuiz(quizData);
       setQuizMode('results'); // Default to results view
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error loading quiz:', err);
       setQuiz(null);
     }
@@ -118,8 +120,8 @@ export default function LearnCoursePage() {
       await apiClient.completeLesson(currentLesson.id, enrollment.id);
       alert('Lição concluída!');
       loadCourseData(); // Refresh to update progress
-    } catch (err: any) {
-      alert('Erro ao completar lição: ' + err.message);
+    } catch (err) {
+      alert('Erro ao completar lição: ' + (err instanceof Error ? err.message : 'Erro desconhecido'));
     }
   };
 
@@ -128,17 +130,17 @@ export default function LearnCoursePage() {
 
     // Find current lesson position
     let found = false;
-    for (const module of modules) {
-      if (!module.lessons) continue;
+    for (const courseModule of modules) {
+      if (!courseModule.lessons) continue;
 
-      for (let i = 0; i < module.lessons.length; i++) {
+      for (let i = 0; i < courseModule.lessons.length; i++) {
         if (found) {
-          handleLessonClick(module.lessons[i]);
+          handleLessonClick(courseModule.lessons[i]);
           return;
         }
-        if (module.lessons[i].id === currentLesson.id) {
-          if (i < module.lessons.length - 1) {
-            handleLessonClick(module.lessons[i + 1]);
+        if (courseModule.lessons[i].id === currentLesson.id) {
+          if (i < courseModule.lessons.length - 1) {
+            handleLessonClick(courseModule.lessons[i + 1]);
             return;
           }
           found = true;
