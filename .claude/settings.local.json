@@ -3,7 +3,10 @@
     "allow": [
       "Bash(npm install:*)",
       "Bash(docker-compose up:*)",
-      "Bash(npm run start:dev:*)"
+      "Bash(npm run start:dev:*)",
+      "Bash(npm run test:*)",
+      "Bash(npm run test:cov:*)",
+      "Bash(npm test:*)"
     ],
     "deny": [],
     "ask": []

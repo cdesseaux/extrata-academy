@@ -11,7 +11,7 @@ export default function ManageCoursePage() {
   const router = useRouter();
   const courseId = params.id as string;
 
-  const [course, setCourse] = useState<any>(null);
+  const [course, setCourse] = useState<{ id: string; title: string; description: string } | null>(null);
   const [modules, setModules] = useState<Module[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -20,6 +20,7 @@ export default function ManageCoursePage() {
 
   useEffect(() => {
     loadCourseData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId]);
 
   const loadCourseData = async () => {
