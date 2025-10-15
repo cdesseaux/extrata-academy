@@ -182,4 +182,190 @@ describe('GamificationService', () => {
       expect(result).toBeDefined();
     });
   });
+
+  describe('addXP with level up', () => {
+    it('should trigger level up when XP threshold is reached', async () => {
+      const userNearLevelUp = {
+        ...mockUserXP,
+        currentLevelXP: 450,
+        nextLevelXP: 500,
+        level: 5,
+      };
+      mockUserXPRepository.findOne.mockResolvedValue(userNearLevelUp);
+      mockAchievementRepository.find.mockResolvedValue([]);
+      mockUserAchievementRepository.find.mockResolvedValue([]);
+
+      const result = await service.addXP('user-123', 100, XPTransactionType.LESSON_COMPLETED);
+
+      expect(result.levelUp).toBe(true);
+      expect(result.newLevel).toBe(6);
+      expect(userXPRepository.save).toHaveBeenCalled();
+    });
+
+    it('should not level up when XP threshold is not reached', async () => {
+      const userNotNearLevelUp = {
+        ...mockUserXP,
+        currentLevelXP: 100,
+        nextLevelXP: 500,
+        level: 5,
+      };
+      mockUserXPRepository.findOne.mockResolvedValue(userNotNearLevelUp);
+      mockAchievementRepository.find.mockResolvedValue([]);
+      mockUserAchievementRepository.find.mockResolvedValue([]);
+
+      const result = await service.addXP('user-123', 50, XPTransactionType.LESSON_COMPLETED);
+
+      expect(result.levelUp).toBe(false);
+      expect(result.newLevel).toBeUndefined();
+    });
+
+    it('should handle multiple level ups with large XP gain', async () => {
+      const userAtLevel1 = {
+        ...mockUserXP,
+        currentLevelXP: 90,
+        nextLevelXP: 100,
+        level: 1,
+      };
+      mockUserXPRepository.findOne.mockResolvedValue(userAtLevel1);
+      mockAchievementRepository.find.mockResolvedValue([]);
+      mockUserAchievementRepository.find.mockResolvedValue([]);
+
+      // Adding 500 XP should cause multiple level ups
+      const result = await service.addXP('user-123', 500, XPTransactionType.COURSE_COMPLETED);
+
+      expect(result.levelUp).toBe(true);
+      expect(result.newLevel).toBeGreaterThan(1);
+    });
+  });
+
+  describe('updateStreak', () => {
+    it('should initialize streak for first time user', async () => {
+      const userWithNoStreak = {
+        ...mockUserXP,
+        lastActivityDate: null,
+        streak: 0,
+      };
+      mockUserXPRepository.findOne.mockResolvedValue(userWithNoStreak);
+
+      await service.updateStreak('user-123');
+
+      expect(userXPRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          streak: 1,
+        }),
+      );
+    });
+
+    it('should increment streak for consecutive day', async () => {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      yesterday.setHours(0, 0, 0, 0);
+
+      const userWithStreak = {
+        ...mockUserXP,
+        lastActivityDate: yesterday,
+        streak: 5,
+      };
+      mockUserXPRepository.findOne.mockResolvedValue(userWithStreak);
+
+      await service.updateStreak('user-123');
+
+      expect(userXPRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          streak: 6,
+        }),
+      );
+    });
+
+    it('should reset streak if more than one day missed', async () => {
+      const threeDaysAgo = new Date();
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+      threeDaysAgo.setHours(0, 0, 0, 0);
+
+      const userWithBrokenStreak = {
+        ...mockUserXP,
+        lastActivityDate: threeDaysAgo,
+        streak: 10,
+      };
+      mockUserXPRepository.findOne.mockResolvedValue(userWithBrokenStreak);
+
+      await service.updateStreak('user-123');
+
+      expect(userXPRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          streak: 1,
+        }),
+      );
+    });
+
+    it('should not change streak if already updated today', async () => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const userUpdatedToday = {
+        ...mockUserXP,
+        lastActivityDate: today,
+        streak: 5,
+      };
+      mockUserXPRepository.findOne.mockResolvedValue(userUpdatedToday);
+
+      await service.updateStreak('user-123');
+
+      // Streak should remain the same
+      expect(userXPRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          streak: 5,
+        }),
+      );
+    });
+  });
+
+  describe('getUserAchievements', () => {
+    it('should return user achievements ordered by unlock date', async () => {
+      const mockUserAchievements = [
+        { id: '1', userId: 'user-123', achievementId: 'ach-1', unlockedAt: new Date() },
+        { id: '2', userId: 'user-123', achievementId: 'ach-2', unlockedAt: new Date() },
+      ];
+      mockUserAchievementRepository.find.mockResolvedValue(mockUserAchievements);
+
+      const result = await service.getUserAchievements('user-123');
+
+      expect(userAchievementRepository.find).toHaveBeenCalledWith({
+        where: { userId: 'user-123' },
+        relations: ['achievement'],
+        order: { unlockedAt: 'DESC' },
+      });
+      expect(result).toEqual(mockUserAchievements);
+    });
+  });
+
+  describe('getXPHistory', () => {
+    it('should return XP transaction history with default limit', async () => {
+      const mockTransactions = [mockXPTransaction];
+      mockXPTransactionRepository.find.mockResolvedValue(mockTransactions);
+
+      const result = await service.getXPHistory('user-123');
+
+      expect(xpTransactionRepository.find).toHaveBeenCalledWith({
+        where: { userId: 'user-123' },
+        order: { createdAt: 'DESC' },
+        take: 20,
+      });
+      expect(result).toEqual(mockTransactions);
+    });
+
+    it('should return XP transaction history with custom limit', async () => {
+      const mockTransactions = [mockXPTransaction];
+      mockXPTransactionRepository.find.mockResolvedValue(mockTransactions);
+
+      const result = await service.getXPHistory('user-123', 50);
+
+      expect(xpTransactionRepository.find).toHaveBeenCalledWith({
+        where: { userId: 'user-123' },
+        order: { createdAt: 'DESC' },
+        take: 50,
+      });
+      expect(result).toEqual(mockTransactions);
+    });
+  });
 });
