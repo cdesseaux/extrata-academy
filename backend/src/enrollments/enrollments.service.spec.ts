@@ -3,6 +3,8 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EnrollmentsService } from './enrollments.service';
 import { Enrollment } from './entities/enrollment.entity';
+import { GamificationService } from '../gamification/gamification.service';
+import { CertificatesService } from '../certificates/certificates.service';
 
 describe('EnrollmentsService', () => {
   let service: EnrollmentsService;
@@ -28,6 +30,15 @@ describe('EnrollmentsService', () => {
     update: jest.fn(() => Promise.resolve({ affected: 1 })),
   };
 
+  const mockGamificationService = {
+    addXP: jest.fn().mockResolvedValue(undefined),
+    checkAndUnlockAchievements: jest.fn().mockResolvedValue(undefined),
+  };
+
+  const mockCertificatesService = {
+    generateCertificate: jest.fn().mockResolvedValue({ id: 'cert-123' }),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -35,6 +46,14 @@ describe('EnrollmentsService', () => {
         {
           provide: getRepositoryToken(Enrollment),
           useValue: mockRepository,
+        },
+        {
+          provide: GamificationService,
+          useValue: mockGamificationService,
+        },
+        {
+          provide: CertificatesService,
+          useValue: mockCertificatesService,
         },
       ],
     }).compile();

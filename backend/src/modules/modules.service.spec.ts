@@ -27,6 +27,11 @@ describe('ModulesService', () => {
     find: jest.fn(() => Promise.resolve([mockModule])),
     findOne: jest.fn(() => Promise.resolve(mockModule)),
     update: jest.fn(() => Promise.resolve({ affected: 1 })),
+    createQueryBuilder: jest.fn(() => ({
+      where: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      getRawOne: jest.fn().mockResolvedValue({ maxOrder: 0 }),
+    })),
   };
 
   beforeEach(async () => {
@@ -61,7 +66,10 @@ describe('ModulesService', () => {
 
     const result = await service.create(moduleData);
 
-    expect(repository.create).toHaveBeenCalledWith(moduleData);
+    expect(repository.create).toHaveBeenCalledWith({
+      ...moduleData,
+      order: 1, // Service adds order based on maxOrder + 1
+    });
     expect(repository.save).toHaveBeenCalled();
     expect(result).toBeDefined();
   });
@@ -77,7 +85,8 @@ describe('ModulesService', () => {
     const updateData = { title: 'Updated Module' };
     const result = await service.update('module-123', updateData);
 
-    expect(repository.update).toHaveBeenCalledWith('module-123', updateData);
+    expect(repository.findOne).toHaveBeenCalled();
+    expect(repository.save).toHaveBeenCalled();
     expect(result).toBeDefined();
   });
 });
