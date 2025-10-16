@@ -208,4 +208,123 @@ describe('CertificatesService', () => {
       expect(result).toBeNull();
     });
   });
+
+  describe('getUserCertificates - edge cases', () => {
+    it('should return empty array if user has no certificates', async () => {
+      mockCertificateRepository.find.mockResolvedValueOnce([]);
+
+      const result = await service.getUserCertificates('user-new');
+
+      expect(result).toEqual([]);
+    });
+
+    it('should only return active certificates', async () => {
+      const result = await service.getUserCertificates('user-123');
+
+      expect(certificateRepository.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ isActive: true }),
+        }),
+      );
+    });
+  });
+
+  describe('getCertificateById - edge cases', () => {
+    it('should return null if certificate not found', async () => {
+      mockCertificateRepository.findOne.mockResolvedValueOnce(null);
+
+      const result = await service.getCertificateById('invalid-id');
+
+      expect(result).toBeNull();
+    });
+
+    it('should include user and course relations', async () => {
+      await service.getCertificateById('cert-123');
+
+      expect(certificateRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'cert-123', isActive: true },
+        relations: ['user', 'course'],
+      });
+    });
+  });
+
+  describe('createCertificate - metadata', () => {
+    it('should create certificate with proper metadata', async () => {
+      mockCertificateRepository.findOne.mockResolvedValueOnce(null);
+      const completionDate = new Date('2024-01-15');
+
+      await service.createCertificate('user-123', 'course-123', completionDate);
+
+      expect(certificateRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          metadata: expect.objectContaining({
+            courseTitle: 'Test Course',
+            studentEmail: 'test@example.com',
+            completionDate: completionDate.toISOString(),
+          }),
+        }),
+      );
+    });
+
+    it('should generate unique certificate number', async () => {
+      mockCertificateRepository.findOne.mockResolvedValueOnce(null);
+
+      await service.createCertificate('user-123', 'course-123', new Date());
+
+      expect(certificateRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          certificateNumber: expect.stringMatching(/^EXT-[A-Z0-9]+-[A-Z0-9]+$/),
+        }),
+      );
+    });
+
+    it('should handle user with only firstName', async () => {
+      mockCertificateRepository.findOne.mockResolvedValueOnce(null);
+      mockUsersService.findOne.mockResolvedValueOnce({
+        ...mockUser,
+        firstName: 'Test',
+        lastName: '',
+      });
+
+      await service.createCertificate('user-123', 'course-123', new Date());
+
+      expect(certificateRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          studentName: 'Test',
+        }),
+      );
+    });
+
+    it('should handle user with only lastName', async () => {
+      mockCertificateRepository.findOne.mockResolvedValueOnce(null);
+      mockUsersService.findOne.mockResolvedValueOnce({
+        ...mockUser,
+        firstName: '',
+        lastName: 'Student',
+      });
+
+      await service.createCertificate('user-123', 'course-123', new Date());
+
+      expect(certificateRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          studentName: 'Student',
+        }),
+      );
+    });
+
+    it('should generate PDF and save certificate URL', async () => {
+      mockCertificateRepository.findOne.mockResolvedValueOnce(null);
+      const pdfUrl = '/uploads/certificates/test.pdf';
+      jest.spyOn(service as any, 'generateCertificatePDF').mockResolvedValueOnce(pdfUrl);
+
+      await service.createCertificate('user-123', 'course-123', new Date());
+
+      expect(certificateRepository.save).toHaveBeenCalledTimes(2);
+      expect(certificateRepository.save).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          certificateUrl: pdfUrl,
+        }),
+      );
+    });
+  });
 });

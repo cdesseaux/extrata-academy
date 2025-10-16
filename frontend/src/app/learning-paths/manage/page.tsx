@@ -4,9 +4,17 @@ import { useEffect, useState } from 'react'
 import { apiClient } from '@/lib/api'
 import { useAuth } from '@/components/AuthProvider'
 
+interface LearningPathManage {
+  id: string;
+  title: string;
+  slug: string;
+  estimatedHours?: number;
+  isFeatured: boolean;
+}
+
 export default function ManageLearningPathsPage() {
   const { isAuthenticated, hasRole, login } = useAuth()
-  const [paths, setPaths] = useState<any[]>([])
+  const [paths, setPaths] = useState<LearningPathManage[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 

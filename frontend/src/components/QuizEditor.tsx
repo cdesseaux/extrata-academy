@@ -81,8 +81,8 @@ export function QuizEditor({ lessonId, onSave, onCancel }: QuizEditorProps) {
         setQuiz(newQuiz);
         toast.success('Quiz criado com sucesso!');
       }
-    } catch (error: any) {
-      toast.error('Erro ao salvar quiz: ' + error.message);
+    } catch (error) {
+      toast.error('Erro ao salvar quiz: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
     } finally {
       setSaving(false);
     }
@@ -106,8 +106,8 @@ export function QuizEditor({ lessonId, onSave, onCancel }: QuizEditorProps) {
       setShowAddQuestion(false);
       resetQuestionForm();
       loadQuiz(); // Recarregar para ver a nova questão
-    } catch (error: any) {
-      toast.error('Erro ao adicionar questão: ' + error.message);
+    } catch (error) {
+      toast.error('Erro ao adicionar questão: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
     } finally {
       setSaving(false);
     }
@@ -120,8 +120,8 @@ export function QuizEditor({ lessonId, onSave, onCancel }: QuizEditorProps) {
       await apiClient.deleteQuestion(questionId);
       toast.success('Questão excluída com sucesso!');
       loadQuiz();
-    } catch (error: any) {
-      toast.error('Erro ao excluir questão: ' + error.message);
+    } catch (error) {
+      toast.error('Erro ao excluir questão: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
     }
   };
 

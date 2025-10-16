@@ -118,9 +118,10 @@ export function FileUpload({
       setProgress(100);
       onUploadComplete(result);
       toast.success('Upload concluído com sucesso!');
-    } catch (err: any) {
-      setError(err.message || 'Erro ao fazer upload');
-      toast.error('Erro ao fazer upload: ' + (err.message || 'Erro desconhecido'));
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao fazer upload';
+      setError(errorMessage);
+      toast.error('Erro ao fazer upload: ' + errorMessage);
       setProgress(0);
     } finally {
       setUploading(false);

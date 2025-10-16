@@ -66,8 +66,8 @@ export function QuizPlayer({ quizId, enrollmentId, onComplete, onCancel }: QuizP
       // Iniciar tentativa
       const newAttempt = await apiClient.startQuizAttempt(quizId, enrollmentId);
       setAttempt(newAttempt);
-    } catch (error: any) {
-      toast.error('Erro ao carregar quiz: ' + error.message);
+    } catch (error) {
+      toast.error('Erro ao carregar quiz: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
       onCancel();
     } finally {
       setLoading(false);
@@ -125,8 +125,8 @@ export function QuizPlayer({ quizId, enrollmentId, onComplete, onCancel }: QuizP
 
       setAttempt(completedAttempt);
       onComplete(completedAttempt);
-    } catch (error: any) {
-      toast.error('Erro ao finalizar quiz: ' + error.message);
+    } catch (error) {
+      toast.error('Erro ao finalizar quiz: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
     } finally {
       setSubmitting(false);
     }

@@ -5,8 +5,16 @@ import { RichTextEditor } from './RichTextEditor';
 import { FileUpload } from './FileUpload';
 import { LessonContentType } from '@/types/lesson';
 
+interface LessonData {
+  title: string;
+  description: string;
+  contentType: LessonContentType;
+  duration: number;
+  content: Record<string, unknown>;
+}
+
 interface AddLessonFormProps {
-  onSubmit: (lessonData: any) => Promise<void>;
+  onSubmit: (lessonData: LessonData) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -25,7 +33,7 @@ export function AddLessonForm({ onSubmit, onCancel }: AddLessonFormProps) {
     const formData = new FormData(e.currentTarget);
 
     // Construir objeto de conteúdo baseado no tipo
-    let content: any = {};
+    let content: Record<string, unknown> = {};
     switch (contentType) {
       case 'video':
         content = {

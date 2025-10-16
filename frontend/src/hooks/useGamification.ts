@@ -18,7 +18,7 @@ export function useGamification() {
   const addXP = useCallback(async (
     amount: number,
     description: string,
-    metadata?: any
+    metadata?: Record<string, unknown>
   ) => {
     try {
       const result = await apiClient.addXP(amount, 'lesson_completed', description, metadata);

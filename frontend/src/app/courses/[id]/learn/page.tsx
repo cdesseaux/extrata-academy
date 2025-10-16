@@ -42,6 +42,7 @@ export default function LearnCoursePage() {
         setCurrentLesson(firstLesson);
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lessonIdFromUrl, modules]);
 
   useEffect(() => {
@@ -51,7 +52,6 @@ export default function LearnCoursePage() {
       setQuiz(null);
       setQuizMode('results');
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentLesson]);
 
   const loadCourseData = async () => {

@@ -83,10 +83,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       setUser(userData);
       setIsAuthenticated(true);
-      
-      // Set token in API client
+
+      // Set token in API client and localStorage
       if (keycloak.token) {
         apiClient.setToken(keycloak.token);
+        localStorage.setItem('keycloak-token', keycloak.token);
       }
 
       console.log('✅ User setup complete:', userData.username);
@@ -142,9 +143,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const refreshInterval = setInterval(async () => {
         try {
           const refreshed = await keycloak.updateToken(30); // Refresh if expires in 30s
-          if (refreshed) {
+          if (refreshed && keycloak.token) {
             console.log('🔄 Token refreshed');
             apiClient.setToken(keycloak.token);
+            localStorage.setItem('keycloak-token', keycloak.token);
           }
         } catch (error) {
           console.error('❌ Token refresh failed:', error);

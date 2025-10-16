@@ -54,8 +54,8 @@ export function QuizEditor({ quizId, lessonId, onSave, onCancel }: QuizEditorPro
       setShuffleQuestions(data.shuffleQuestions);
       setShuffleOptions(data.shuffleOptions);
       setQuestions(data.questions || []);
-    } catch (err: any) {
-      setError(err.message || 'Erro ao carregar quiz');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao carregar quiz');
     } finally {
       setLoading(false);
     }
@@ -86,8 +86,8 @@ export function QuizEditor({ quizId, lessonId, onSave, onCancel }: QuizEditorPro
 
       setQuiz(savedQuiz);
       onSave?.(savedQuiz);
-    } catch (err: any) {
-      setError(err.message || 'Erro ao salvar quiz');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao salvar quiz');
     } finally {
       setSaving(false);
     }
@@ -109,8 +109,8 @@ export function QuizEditor({ quizId, lessonId, onSave, onCancel }: QuizEditorPro
     try {
       await apiClient.deleteQuestion(questionId);
       setQuestions(questions.filter(q => q.id !== questionId));
-    } catch (err: any) {
-      setError(err.message || 'Erro ao excluir questão');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao excluir questão');
     }
   };
 
@@ -293,7 +293,7 @@ export function QuizEditor({ quizId, lessonId, onSave, onCancel }: QuizEditorPro
           {questions.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <p className="mb-2">Nenhuma questão cadastrada ainda.</p>
-              <p className="text-sm">Clique em "Adicionar Questão" para começar.</p>
+              <p className="text-sm">Clique em &quot;Adicionar Questão&quot; para começar.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -417,7 +417,7 @@ function QuestionModal({ quizId, question, onSave, onCancel }: QuestionModalProp
       setSaving(true);
       setError(null);
 
-      const questionData: CreateQuestionDto | any = {
+      const questionData: CreateQuestionDto = {
         quizId,
         type,
         question: questionText,
@@ -434,8 +434,8 @@ function QuestionModal({ quizId, question, onSave, onCancel }: QuestionModalProp
       }
 
       onSave(savedQuestion);
-    } catch (err: any) {
-      setError(err.message || 'Erro ao salvar questão');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao salvar questão');
     } finally {
       setSaving(false);
     }

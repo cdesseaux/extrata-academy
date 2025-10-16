@@ -74,8 +74,8 @@ export function QuizPlayer({ quizId, enrollmentId, onComplete }: QuizPlayerProps
       }
 
       setQuiz(quizData);
-    } catch (err: any) {
-      setError(err.message || 'Erro ao carregar quiz');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao carregar quiz');
     } finally {
       setLoading(false);
     }
@@ -122,8 +122,8 @@ export function QuizPlayer({ quizId, enrollmentId, onComplete }: QuizPlayerProps
       const result = await apiClient.submitQuiz(attempt.id);
       setAttempt(result);
       onComplete?.(result);
-    } catch (err: any) {
-      setError(err.message || 'Erro ao submeter quiz');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao submeter quiz');
     } finally {
       setSubmitting(false);
     }

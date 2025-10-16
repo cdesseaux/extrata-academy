@@ -28,7 +28,7 @@ interface Enrollment {
 
 export default function CourseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const [course, setCourse] = useState<Course | null>(null);
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
   const [loading, setLoading] = useState(true);
@@ -39,6 +39,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
   useEffect(() => {
     // Carrega dados do curso sempre, independente de estar logado
     loadCourseData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resolvedParams.id]);
 
   // Recarrega dados quando o status de autenticação mudar
@@ -46,6 +47,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
     if (!isLoading) {
       loadCourseData();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, isLoading, resolvedParams.id]);
 
   const loadCourseData = async () => {

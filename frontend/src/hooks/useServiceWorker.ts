@@ -9,43 +9,15 @@ export function useServiceWorker() {
   const [updateAvailable, setUpdateAvailable] = useState(false);
 
   useEffect(() => {
-    // Verificar se o service worker é suportado
+    // Service worker registration disabled to prevent reload loops
+    // ServiceWorkerManager is already unregistering all service workers
     if ('serviceWorker' in navigator) {
       setIsSupported(true);
-      
-      // Registrar o service worker
-      navigator.serviceWorker.register('/sw.js')
-        .then((registration) => {
-          console.log('Service Worker registrado com sucesso:', registration);
-          
-          // Verificar se há atualizações
-          registration.addEventListener('updatefound', () => {
-            const newWorker = registration.installing;
-            if (newWorker) {
-              newWorker.addEventListener('statechange', () => {
-                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  setUpdateAvailable(true);
-                }
-              });
-            }
-          });
-        })
-        .catch((error) => {
-          console.error('Erro ao registrar Service Worker:', error);
-        });
 
       // Verificar se já está instalado
       if (navigator.serviceWorker.controller) {
         setIsInstalled(true);
       }
-
-      // Escutar mudanças no service worker
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        setIsInstalled(true);
-        setUpdateAvailable(false);
-        // Recarregar a página para aplicar a atualização
-        window.location.reload();
-      });
     }
 
     // Verificar status da conexão

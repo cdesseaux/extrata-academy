@@ -32,8 +32,8 @@ export default function ManageCoursePage() {
       ]);
       setCourse(courseData);
       setModules(modulesData);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao carregar dados do curso');
     } finally {
       setLoading(false);
     }
@@ -53,8 +53,8 @@ export default function ManageCoursePage() {
       await apiClient.createModule(newModule);
       setShowAddModule(false);
       loadCourseData();
-    } catch (err: any) {
-      alert('Erro ao criar módulo: ' + err.message);
+    } catch (err) {
+      alert('Erro ao criar módulo: ' + (err instanceof Error ? err.message : 'Erro desconhecido'));
     }
   };
 
@@ -75,8 +75,8 @@ export default function ManageCoursePage() {
       await apiClient.createLesson(newLesson);
       setShowAddLesson(null);
       loadCourseData();
-    } catch (err: any) {
-      alert('Erro ao criar lição: ' + err.message);
+    } catch (err) {
+      alert('Erro ao criar lição: ' + (err instanceof Error ? err.message : 'Erro desconhecido'));
     }
   };
 
@@ -86,8 +86,8 @@ export default function ManageCoursePage() {
     try {
       await apiClient.deleteModule(moduleId);
       loadCourseData();
-    } catch (err: any) {
-      alert('Erro ao excluir módulo: ' + err.message);
+    } catch (err) {
+      alert('Erro ao excluir módulo: ' + (err instanceof Error ? err.message : 'Erro desconhecido'));
     }
   };
 
@@ -97,8 +97,8 @@ export default function ManageCoursePage() {
     try {
       await apiClient.deleteLesson(lessonId);
       loadCourseData();
-    } catch (err: any) {
-      alert('Erro ao excluir lição: ' + err.message);
+    } catch (err) {
+      alert('Erro ao excluir lição: ' + (err instanceof Error ? err.message : 'Erro desconhecido'));
     }
   };
 

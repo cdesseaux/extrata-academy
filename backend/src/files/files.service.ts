@@ -1,8 +1,9 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { File, FileType } from './entities/file.entity';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -84,7 +85,7 @@ export class FilesService {
       Key: relativePath,
       Body: file.buffer,
       ContentType: file.mimetype,
-      ACL: 'public-read',
+      // ACL removido - bucket usa Bucket Policy para acesso público
     });
 
     await this.s3Client.send(command);
@@ -167,5 +168,32 @@ export class FilesService {
       file.isActive = false;
       await this.filesRepository.save(file);
     }
+  }
+
+  /**
+   * Gera URL assinada temporária para acesso privado ao arquivo no S3
+   * @param id ID do arquivo
+   * @param expiresIn Tempo de expiração em segundos (padrão: 1 hora)
+   * @returns URL assinada ou URL local
+   */
+  async getPresignedUrl(id: string, expiresIn: number = 3600): Promise<string> {
+    const file = await this.findOne(id);
+    if (!file) {
+      throw new NotFoundException('Arquivo não encontrado');
+    }
+
+    // Se for storage local, retorna a URL local
+    if (this.storageType !== 's3') {
+      return file.url;
+    }
+
+    // Gera URL assinada do S3
+    const command = new GetObjectCommand({
+      Bucket: this.s3Bucket,
+      Key: `${file.type}s/${file.filename}`,
+    });
+
+    const signedUrl = await getSignedUrl(this.s3Client, command, { expiresIn });
+    return signedUrl;
   }
 }

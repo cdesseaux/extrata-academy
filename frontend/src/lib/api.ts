@@ -107,14 +107,14 @@ class ApiClient {
     return this.request(`/courses/${id}`);
   }
 
-  async createCourse(courseData: any) {
+  async createCourse(courseData: Record<string, unknown>) {
     return this.request('/courses', {
       method: 'POST',
       body: JSON.stringify(courseData),
     });
   }
 
-  async updateCourse(id: string, courseData: any) {
+  async updateCourse(id: string, courseData: Record<string, unknown>) {
     return this.request(`/courses/${id}`, {
       method: 'PUT',
       body: JSON.stringify(courseData),
@@ -167,14 +167,14 @@ class ApiClient {
     return this.request(`/modules/course/${courseId}`);
   }
 
-  async createModule(moduleData: any) {
+  async createModule(moduleData: Record<string, unknown>) {
     return this.request('/modules', {
       method: 'POST',
       body: JSON.stringify(moduleData),
     });
   }
 
-  async updateModule(id: string, moduleData: any) {
+  async updateModule(id: string, moduleData: Record<string, unknown>) {
     return this.request(`/modules/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(moduleData),
@@ -219,14 +219,14 @@ class ApiClient {
     return this.request(`/lessons/module/${moduleId}`);
   }
 
-  async createLesson(lessonData: any) {
+  async createLesson(lessonData: Record<string, unknown>) {
     return this.request('/lessons', {
       method: 'POST',
       body: JSON.stringify(lessonData),
     });
   }
 
-  async updateLesson(id: string, lessonData: any) {
+  async updateLesson(id: string, lessonData: Record<string, unknown>) {
     return this.request(`/lessons/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(lessonData),
@@ -289,14 +289,14 @@ class ApiClient {
     return this.request(`/quizzes/lesson/${lessonId}`);
   }
 
-  async createQuiz(quizData: any) {
+  async createQuiz(quizData: Record<string, unknown>) {
     return this.request('/quizzes', {
       method: 'POST',
       body: JSON.stringify(quizData),
     });
   }
 
-  async updateQuiz(id: string, quizData: any) {
+  async updateQuiz(id: string, quizData: Record<string, unknown>) {
     return this.request(`/quizzes/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(quizData),
@@ -310,14 +310,14 @@ class ApiClient {
   }
 
   // Question endpoints
-  async addQuestion(questionData: any) {
+  async addQuestion(questionData: Record<string, unknown>) {
     return this.request('/quizzes/questions', {
       method: 'POST',
       body: JSON.stringify(questionData),
     });
   }
 
-  async updateQuestion(id: string, questionData: any) {
+  async updateQuestion(id: string, questionData: Record<string, unknown>) {
     return this.request(`/quizzes/questions/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(questionData),
@@ -383,14 +383,14 @@ class ApiClient {
     return this.request(`/learning-paths/${id}`);
   }
 
-  async createLearningPath(data: any) {
+  async createLearningPath(data: Record<string, unknown>) {
     return this.request('/learning-paths', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async updateLearningPath(id: string, data: any) {
+  async updateLearningPath(id: string, data: Record<string, unknown>) {
     return this.request(`/learning-paths/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
@@ -456,8 +456,8 @@ class ApiClient {
   }
 
   // Certificate endpoints
-  async getMyCertificates() {
-    return this.request('/certificates/my-certificates');
+  async getMyCertificates(): Promise<unknown[]> {
+    return this.request<unknown[]>('/certificates/my-certificates');
   }
 
   async getCertificate(id: string) {
@@ -496,7 +496,7 @@ class ApiClient {
     return this.request('/gamification/xp-history');
   }
 
-  async addXP(amount: number, type: string, description?: string, metadata?: any) {
+  async addXP(amount: number, type: string, description?: string, metadata?: Record<string, unknown>) {
     return this.request('/gamification/add-xp', {
       method: 'POST',
       body: JSON.stringify({ amount, type, description, metadata }),

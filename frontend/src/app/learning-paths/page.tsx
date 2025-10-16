@@ -4,9 +4,17 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { apiClient } from '@/lib/api'
 
+interface LearningPathSummary {
+  id: string;
+  title: string;
+  description: string;
+  estimatedHours?: number;
+  isFeatured: boolean;
+}
+
 export default function LearningPathsPage() {
   const router = useRouter()
-  const [paths, setPaths] = useState<any[]>([])
+  const [paths, setPaths] = useState<LearningPathSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 

@@ -36,8 +36,8 @@ export default function Dashboard() {
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { notifications, removeNotification, addXP, updateStreak } = useGamification();
-  const [paths, setPaths] = useState<any[]>([])
+  const { notifications, removeNotification } = useGamification();
+  const [paths, setPaths] = useState<LearningPathItem[]>([])
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -68,7 +68,8 @@ export default function Dashboard() {
       try {
         const data = await apiClient.getLearningPaths()
         setPaths((data || []).slice(0, 3))
-      } catch (e) {
+      } catch {
+        // Silently fail for learning paths
       }
     }
     load()

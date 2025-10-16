@@ -7,7 +7,21 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSo
 import { toast } from 'sonner';
 import apiClient from '@/lib/api';
 import { Module, CreateModuleDto } from '@/types';
-import { CreateLessonDto, LessonContentType } from '@/types/lesson';
+import { CreateLessonDto } from '@/types/lesson';
+
+interface Course {
+  id: string;
+  title: string;
+  description: string;
+}
+
+interface LessonData {
+  title: string;
+  description: string;
+  contentType: string;
+  duration: number;
+  content: Record<string, unknown>;
+}
 import { SortableModule } from '@/components/SortableModule';
 import { AddLessonForm } from '@/components/AddLessonForm';
 import { PageHeaderSkeleton, ModuleListSkeleton } from '@/components/LoadingSkeleton';
@@ -19,7 +33,7 @@ export default function ManageCoursePage() {
   const router = useRouter();
   const courseId = params.id as string;
 
-  const [course, setCourse] = useState<any>(null);
+  const [course, setCourse] = useState<Course | null>(null);
   const [modules, setModules] = useState<Module[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -37,6 +51,7 @@ export default function ManageCoursePage() {
 
   useEffect(() => {
     loadCourseData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId]);
 
   const loadCourseData = async () => {
@@ -48,8 +63,9 @@ export default function ManageCoursePage() {
       ]);
       setCourse(courseData);
       setModules(modulesData);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
+      setError(errorMessage);
       toast.error('Erro ao carregar dados do curso');
     } finally {
       setLoading(false);
@@ -78,7 +94,7 @@ export default function ManageCoursePage() {
         newModules.map((m) => m.id)
       );
       toast.success('Módulos reordenados com sucesso!');
-    } catch (err: any) {
+    } catch {
       toast.error('Erro ao salvar reordenação');
       // Revert on error
       setModules(modules);
@@ -103,12 +119,12 @@ export default function ManageCoursePage() {
       setShowAddModule(false);
       (e.target as HTMLFormElement).reset();
       loadCourseData();
-    } catch (err: any) {
-      toast.error('Erro ao criar módulo: ' + err.message);
+    } catch (err) {
+      toast.error('Erro ao criar módulo: ' + (err instanceof Error ? err.message : 'Erro desconhecido'));
     }
   };
 
-  const handleAddLesson = async (lessonData: any) => {
+  const handleAddLesson = async (lessonData: LessonData) => {
     if (!showAddLesson) return;
 
     const newLesson: CreateLessonDto = {
@@ -125,8 +141,8 @@ export default function ManageCoursePage() {
       toast.success('Lição criada com sucesso!');
       setShowAddLesson(null);
       loadCourseData();
-    } catch (err: any) {
-      toast.error('Erro ao criar lição: ' + err.message);
+    } catch (err) {
+      toast.error('Erro ao criar lição: ' + (err instanceof Error ? err.message : 'Erro desconhecido'));
     }
   };
 
@@ -135,8 +151,8 @@ export default function ManageCoursePage() {
       await apiClient.deleteModule(moduleId);
       toast.success('Módulo excluído com sucesso!');
       loadCourseData();
-    } catch (err: any) {
-      toast.error('Erro ao excluir módulo: ' + err.message);
+    } catch (err) {
+      toast.error('Erro ao excluir módulo: ' + (err instanceof Error ? err.message : 'Erro desconhecido'));
     }
   };
 
@@ -145,8 +161,8 @@ export default function ManageCoursePage() {
       await apiClient.deleteLesson(lessonId);
       toast.success('Lição excluída com sucesso!');
       loadCourseData();
-    } catch (err: any) {
-      toast.error('Erro ao excluir lição: ' + err.message);
+    } catch (err) {
+      toast.error('Erro ao excluir lição: ' + (err instanceof Error ? err.message : 'Erro desconhecido'));
     }
   };
 
@@ -155,7 +171,7 @@ export default function ManageCoursePage() {
       setSaving(true);
       await apiClient.reorderLessons(moduleId, lessonIds);
       toast.success('Lições reordenadas com sucesso!');
-    } catch (err: any) {
+    } catch {
       toast.error('Erro ao salvar reordenação de lições');
       // Reload on error
       loadCourseData();

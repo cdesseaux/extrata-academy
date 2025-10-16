@@ -31,8 +31,8 @@ export function QuizResults({ attempt, onRetake, onClose }: QuizResultsProps) {
       
       setQuiz(quizData);
       setCanRetake(retakeStatus);
-    } catch (error: any) {
-      toast.error('Erro ao carregar dados do quiz: ' + error.message);
+    } catch (error) {
+      toast.error('Erro ao carregar dados do quiz: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
     } finally {
       setLoading(false);
     }

@@ -179,5 +179,120 @@ describe('LearningPathsService', () => {
       expect(learningPathEnrollmentRepository.save).toHaveBeenCalled();
       expect(result).toBeDefined();
     });
+
+    it('should throw NotFoundException if enrollment not found', async () => {
+      mockLearningPathEnrollmentRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.updateProgress('user-123', 'path-123', 75)).rejects.toThrow('Enrollment not found');
+    });
+
+    it('should set completedAt when progress reaches 100%', async () => {
+      const incompleteEnrollment = {
+        ...mockLearningPathEnrollment,
+        progressPercentage: 90,
+        completedAt: null,
+      };
+      mockLearningPathEnrollmentRepository.findOne.mockResolvedValue(incompleteEnrollment);
+
+      await service.updateProgress('user-123', 'path-123', 100);
+
+      expect(learningPathEnrollmentRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          progressPercentage: 100,
+          completedAt: expect.any(Date),
+        }),
+      );
+    });
+
+    it('should not update completedAt if already completed', async () => {
+      const completedEnrollment = {
+        ...mockLearningPathEnrollment,
+        progressPercentage: 100,
+        completedAt: new Date('2024-01-01'),
+      };
+      mockLearningPathEnrollmentRepository.findOne.mockResolvedValue(completedEnrollment);
+
+      await service.updateProgress('user-123', 'path-123', 100);
+
+      expect(learningPathEnrollmentRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          completedAt: completedEnrollment.completedAt,
+        }),
+      );
+    });
+  });
+
+  describe('update', () => {
+    it('should update learning path', async () => {
+      const updateDto = {
+        title: 'Updated Path',
+        description: 'Updated description',
+      };
+
+      await service.update('path-123', updateDto);
+
+      expect(learningPathRepository.findOne).toHaveBeenCalled();
+      expect(learningPathRepository.save).toHaveBeenCalled();
+    });
+
+    it('should update courses if provided', async () => {
+      const updateDto = {
+        title: 'Updated Path',
+        courses: [
+          { courseId: 'course-1', orderIndex: 0, isRequired: true },
+          { courseId: 'course-2', orderIndex: 1, isRequired: false },
+        ],
+      };
+
+      await service.update('path-123', updateDto as any);
+
+      expect(learningPathCourseRepository.delete).toHaveBeenCalledWith({ learningPathId: 'path-123' });
+      expect(learningPathCourseRepository.save).toHaveBeenCalled();
+    });
+  });
+
+  describe('remove', () => {
+    it('should delete learning path', async () => {
+      mockLearningPathRepository.delete = jest.fn().mockResolvedValue({ affected: 1 });
+
+      await service.remove('path-123');
+
+      expect(mockLearningPathRepository.delete).toHaveBeenCalledWith('path-123');
+    });
+  });
+
+  describe('setCourses', () => {
+    it('should set courses for learning path', async () => {
+      const courses = [
+        { courseId: 'course-1', orderIndex: 0, isRequired: true },
+        { courseId: 'course-2', orderIndex: 1, isRequired: false },
+        { courseId: 'course-3', orderIndex: 2 }, // isRequired will default to true
+      ];
+
+      await service.setCourses('path-123', courses);
+
+      expect(learningPathCourseRepository.delete).toHaveBeenCalledWith({ learningPathId: 'path-123' });
+      expect(learningPathCourseRepository.create).toHaveBeenCalledTimes(3);
+      expect(learningPathCourseRepository.save).toHaveBeenCalled();
+    });
+  });
+
+  describe('enroll with existing enrollment', () => {
+    it('should return existing enrollment if user already enrolled', async () => {
+      mockLearningPathEnrollmentRepository.findOne.mockResolvedValue(mockLearningPathEnrollment);
+
+      const result = await service.enroll('user-123', 'path-123');
+
+      expect(result).toEqual(mockLearningPathEnrollment);
+      expect(learningPathEnrollmentRepository.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('findOne with error', () => {
+    it('should throw NotFoundException if learning path not found', async () => {
+      mockLearningPathRepository.findOne.mockResolvedValueOnce(null);
+
+      await expect(service.findOne('invalid-id')).rejects.toThrow('Learning path not found');
+    });
   });
 });

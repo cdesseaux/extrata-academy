@@ -1,18 +1,40 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { apiClient } from '@/lib/api'
 import { useAuth } from '@/components/AuthProvider'
 
+interface LearningPathCourse {
+  id: string;
+  orderIndex?: number;
+  isRequired: boolean;
+  course?: {
+    title: string;
+  };
+}
+
+interface LearningPath {
+  id: string;
+  title: string;
+  description: string;
+  estimatedHours?: number;
+  isFeatured: boolean;
+  courses?: LearningPathCourse[];
+}
+
+interface LearningPathEnrollment {
+  id: string;
+  progressPercentage?: number;
+}
+
 export default function LearningPathDetailPage() {
   const params = useParams()
-  const router = useRouter()
   const { isAuthenticated, isLoading, login } = useAuth()
   const id = Array.isArray(params?.id) ? params?.id[0] : (params?.id as string)
 
-  const [path, setPath] = useState<any | null>(null)
-  const [enrollment, setEnrollment] = useState<any | null>(null)
+  const [path, setPath] = useState<LearningPath | null>(null)
+  const [enrollment, setEnrollment] = useState<LearningPathEnrollment | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [updating, setUpdating] = useState(false)
@@ -103,8 +125,8 @@ export default function LearningPathDetailPage() {
               <h3 className="font-semibold mb-2">Cursos na trilha</h3>
               <ul className="list-disc list-inside space-y-1">
                 {(path.courses || [])
-                  .sort((a: any, b: any) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0))
-                  .map((c: any) => (
+                  .sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0))
+                  .map((c) => (
                     <li key={c.id} className="text-gray-700">
                       {c.course?.title || 'Curso'}
                       {c.isRequired ? ' • obrigatório' : ''}

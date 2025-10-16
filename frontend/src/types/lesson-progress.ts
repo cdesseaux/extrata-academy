@@ -7,7 +7,7 @@ export interface LessonProgress {
   completedAt?: string;
   watchTime: number; // em segundos
   lastPosition?: number; // última posição do vídeo
-  metadata?: any; // Quiz scores, etc.
+  metadata?: Record<string, unknown>; // Quiz scores, etc.
   createdAt: string;
   updatedAt: string;
 }
