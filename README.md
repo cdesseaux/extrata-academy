@@ -8,35 +8,39 @@ Sistema completo de Learning Management System (LMS) desenvolvido para capacita�
 
 - **🔐 Autenticação Segura**: Integração completa com Keycloak
 - **📚 Gerenciamento de Cursos**: Criação, edição e organização de cursos
-- **🎥 Player de Vídeo Avançado**: Reprodução com anotações e legendas
+- **🎥 Player de Vídeo Avançado**: Reprodução com anotações, legendas e bookmarks
 - **📄 Visualizador de PDF**: Leitura com sistema de notas
 - **🏆 Sistema de Gamificação**: XP, badges e leaderboard
-- **📜 Certificados**: Geração e validação de certificados
-- **📱 PWA**: Suporte offline e instalação como app
-- **🌙 Tema Escuro/Claro**: Interface adaptável
-- **📊 Dashboard Completo**: Acompanhamento de progresso
+- **📜 Certificados**: Geração automática e validação via QR Code
+- **☁️ Storage S3**: Upload seguro de arquivos com presigned URLs
+- **🛣️ Trilhas de Aprendizagem**: Caminhos estruturados de cursos
+- **📊 Dashboard Completo**: Acompanhamento de progresso em tempo real
+- **✅ Testes Automatizados**: 61% de cobertura (255 testes)
 
 ### 🛠️ Tecnologias
 
 **Frontend:**
-- Next.js 14
-- React 18
+- Next.js 15.5.4
+- React 19
 - TypeScript
-- Tailwind CSS
+- Tailwind CSS 4
 - Keycloak JS
+- React Player (video)
 
 **Backend:**
-- NestJS
+- NestJS 11
 - TypeScript
-- PostgreSQL
-- Prisma ORM
+- PostgreSQL 15
+- TypeORM
 - JWT Authentication
+- AWS S3 (file storage)
 
 **Infraestrutura:**
 - Docker & Docker Compose
 - Nginx
-- Keycloak
-- Redis
+- Keycloak (external)
+- Redis 7
+- GitHub Actions (CI/CD)
 
 ### 🚀 Início Rápido
 
@@ -85,19 +89,37 @@ extrata-academy/
 
 ### 📚 Documentação
 
-- [Guia de Desenvolvimento](docs/extrata-academy-dev-guide.txt)
-- [Arquitetura do Sistema](docs/extrata-academy-architecture.txt)
-- [Setup de Produção](PRODUCTION-SETUP.md)
-- [Guia do Keycloak](KEYCLOAK-SETUP-GUIDE.md)
+- [Setup S3 Storage](docs/s3-storage-setup.md)
+- [Curso Aluno (Conteúdo)](docs/curso-aluno-extrata-academy.md)
+- Backend API: http://localhost:4000/api/docs (Swagger)
 
 ### 🧪 Testes
 
-Execute os testes automatizados:
+**Backend (61% coverage - 255 testes):**
 ```bash
-cd test-automation
-npm install
-npm run test
+# Rodar todos os testes
+docker-compose exec backend npm test
+
+# Testes com coverage
+docker-compose exec backend npm run test:cov
+
+# Testes E2E
+docker-compose exec backend npm run test:e2e
 ```
+
+**Frontend:**
+```bash
+docker-compose exec frontend npm test
+```
+
+**Módulos com testes:**
+- ✅ Files (upload S3, presigned URLs)
+- ✅ Gamification (XP, achievements)
+- ✅ Enrollments (matrículas, progresso)
+- ✅ Certificates (geração PDF)
+- ✅ Learning Paths (trilhas)
+- ✅ Lessons & Modules
+- ✅ Quizzes
 
 ### 📦 Deploy
 
