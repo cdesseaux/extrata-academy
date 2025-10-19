@@ -2,13 +2,29 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import apiClient from '@/lib/api';
 import { Module, Lesson, LessonContentType, Quiz, QuizAttempt } from '@/types';
 import { Skeleton } from '@/components/LoadingSkeleton';
 import { QuizPlayer } from '@/components/QuizPlayer';
 import { QuizResults } from '@/components/QuizResults';
 import { AdvancedVideoPlayer } from '@/components/AdvancedVideoPlayer';
-import { AdvancedPDFViewer } from '@/components/AdvancedPDFViewer';
+
+// Import PDFViewer dynamically to avoid SSR issues with pdfjs-dist
+const AdvancedPDFViewer = dynamic(
+  () => import('@/components/AdvancedPDFViewer').then(mod => ({ default: mod.AdvancedPDFViewer })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="bg-gray-900 rounded-lg p-8 min-h-[600px] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Carregando visualizador de PDF...</p>
+        </div>
+      </div>
+    )
+  }
+);
 
 export default function LearnCoursePage() {
   const params = useParams();

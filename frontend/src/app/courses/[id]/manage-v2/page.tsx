@@ -40,6 +40,7 @@ export default function ManageCoursePage() {
   const [error, setError] = useState<string | null>(null);
   const [showAddModule, setShowAddModule] = useState(false);
   const [showAddLesson, setShowAddLesson] = useState<string | null>(null);
+  const [editingLesson, setEditingLesson] = useState<{ moduleId: string; lesson: any } | null>(null);
   const [editingQuizLessonId, setEditingQuizLessonId] = useState<string | null>(null);
 
   const sensors = useSensors(
@@ -177,6 +178,32 @@ export default function ManageCoursePage() {
       loadCourseData();
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleEditLesson = (moduleId: string, lesson: any) => {
+    setEditingLesson({ moduleId, lesson });
+    setShowAddLesson(null); // Fecha o formulário de adicionar se estiver aberto
+  };
+
+  const handleUpdateLesson = async (lessonData: LessonData) => {
+    if (!editingLesson) return;
+
+    const updatedLesson = {
+      title: lessonData.title,
+      description: lessonData.description,
+      contentType: lessonData.contentType,
+      duration: lessonData.duration,
+      content: lessonData.content,
+    };
+
+    try {
+      await apiClient.updateLesson(editingLesson.lesson.id, updatedLesson);
+      toast.success('Lição atualizada com sucesso!');
+      setEditingLesson(null);
+      loadCourseData();
+    } catch (err) {
+      toast.error('Erro ao atualizar lição: ' + (err instanceof Error ? err.message : 'Erro desconhecido'));
     }
   };
 
@@ -322,6 +349,7 @@ export default function ManageCoursePage() {
                   index={index}
                   onDelete={handleDeleteModule}
                   onAddLesson={setShowAddLesson}
+                  onEditLesson={handleEditLesson}
                   onDeleteLesson={handleDeleteLesson}
                   onReorderLessons={handleReorderLessons}
                   onEditQuiz={handleEditQuiz}
@@ -341,6 +369,23 @@ export default function ManageCoursePage() {
               <AddLessonForm
                 onSubmit={handleAddLesson}
                 onCancel={() => setShowAddLesson(null)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Lesson Modal */}
+      {editingLesson && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <h3 className="text-2xl font-semibold mb-4">Editar Lição</h3>
+              <AddLessonForm
+                onSubmit={handleUpdateLesson}
+                onCancel={() => setEditingLesson(null)}
+                initialData={editingLesson.lesson}
+                isEditing={true}
               />
             </div>
           </div>

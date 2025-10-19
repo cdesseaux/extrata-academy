@@ -14,6 +14,7 @@ interface SortableModuleProps {
   index: number;
   onDelete: (id: string) => void;
   onAddLesson: (moduleId: string) => void;
+  onEditLesson: (moduleId: string, lesson: Lesson) => void;
   onDeleteLesson: (lessonId: string) => void;
   onReorderLessons: (moduleId: string, lessonIds: string[]) => void;
   onEditQuiz?: (lessonId: string) => void;
@@ -24,6 +25,7 @@ export function SortableModule({
   index,
   onDelete,
   onAddLesson,
+  onEditLesson,
   onDeleteLesson,
   onReorderLessons,
   onEditQuiz,
@@ -129,6 +131,7 @@ export function SortableModule({
                   lesson={lesson}
                   index={lessonIndex}
                   onDelete={onDeleteLesson}
+                  onEdit={(lesson) => onEditLesson(module.id, lesson)}
                   onEditQuiz={onEditQuiz}
                 />
               ))}

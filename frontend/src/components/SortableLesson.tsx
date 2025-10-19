@@ -9,6 +9,7 @@ interface SortableLessonProps {
   lesson: Lesson;
   index: number;
   onDelete: (lessonId: string) => void;
+  onEdit: (lesson: Lesson) => void;
   onEditQuiz?: (lessonId: string) => void;
 }
 
@@ -16,6 +17,7 @@ export function SortableLesson({
   lesson,
   index,
   onDelete,
+  onEdit,
   onEditQuiz,
 }: SortableLessonProps) {
   const {
@@ -72,11 +74,19 @@ export function SortableLesson({
         </span>
       </div>
       <div className="flex items-center gap-2">
-        {lesson.contentType === LessonContentType.QUIZ && onEditQuiz && (
+        {lesson.contentType === LessonContentType.QUIZ && onEditQuiz ? (
           <button
             onClick={() => onEditQuiz(lesson.id)}
             className="opacity-0 group-hover:opacity-100 text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50 transition-opacity"
             title="Editar Quiz"
+          >
+            <Edit3 className="w-4 h-4" />
+          </button>
+        ) : (
+          <button
+            onClick={() => onEdit(lesson)}
+            className="opacity-0 group-hover:opacity-100 text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50 transition-opacity"
+            title="Editar lição"
           >
             <Edit3 className="w-4 h-4" />
           </button>

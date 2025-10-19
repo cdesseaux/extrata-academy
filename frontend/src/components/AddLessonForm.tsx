@@ -16,14 +16,22 @@ interface LessonData {
 interface AddLessonFormProps {
   onSubmit: (lessonData: LessonData) => Promise<void>;
   onCancel: () => void;
+  initialData?: {
+    title: string;
+    description: string;
+    contentType: LessonContentType;
+    duration: number;
+    content: Record<string, unknown>;
+  };
+  isEditing?: boolean;
 }
 
-export function AddLessonForm({ onSubmit, onCancel }: AddLessonFormProps) {
-  const [contentType, setContentType] = useState<LessonContentType>('video');
-  const [textContent, setTextContent] = useState('');
-  const [videoUrl, setVideoUrl] = useState('');
-  const [pdfUrl, setPdfUrl] = useState('');
-  const [externalUrl, setExternalUrl] = useState('');
+export function AddLessonForm({ onSubmit, onCancel, initialData, isEditing = false }: AddLessonFormProps) {
+  const [contentType, setContentType] = useState<LessonContentType>(initialData?.contentType || 'video');
+  const [textContent, setTextContent] = useState((initialData?.content?.textContent as string) || '');
+  const [videoUrl, setVideoUrl] = useState((initialData?.content?.videoUrl as string) || '');
+  const [pdfUrl, setPdfUrl] = useState((initialData?.content?.pdfUrl as string) || '');
+  const [externalUrl, setExternalUrl] = useState((initialData?.content?.externalUrl as string) || '');
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -79,6 +87,7 @@ export function AddLessonForm({ onSubmit, onCancel }: AddLessonFormProps) {
             type="text"
             name="title"
             required
+            defaultValue={initialData?.title || ''}
             className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             placeholder="Ex: Introdução ao Módulo"
           />
@@ -106,6 +115,7 @@ export function AddLessonForm({ onSubmit, onCancel }: AddLessonFormProps) {
         <textarea
           name="description"
           rows={3}
+          defaultValue={initialData?.description || ''}
           className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           placeholder="Descreva o conteúdo desta lição..."
         />
@@ -186,7 +196,7 @@ export function AddLessonForm({ onSubmit, onCancel }: AddLessonFormProps) {
         <input
           type="number"
           name="duration"
-          defaultValue={0}
+          defaultValue={initialData?.duration || 0}
           min={0}
           className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           placeholder="0"
@@ -200,7 +210,7 @@ export function AddLessonForm({ onSubmit, onCancel }: AddLessonFormProps) {
           disabled={submitting}
           className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {submitting ? 'Criando...' : 'Adicionar Lição'}
+          {submitting ? (isEditing ? 'Atualizando...' : 'Criando...') : (isEditing ? 'Atualizar Lição' : 'Adicionar Lição')}
         </button>
         <button
           type="button"
