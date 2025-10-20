@@ -40,6 +40,25 @@ export function AddLessonForm({ onSubmit, onCancel, initialData, isEditing = fal
 
     const formData = new FormData(e.currentTarget);
 
+    // Validações específicas por tipo
+    if (contentType === 'video' && !videoUrl) {
+      alert('Por favor, adicione uma URL de vídeo ou faça upload de um arquivo');
+      setSubmitting(false);
+      return;
+    }
+
+    if (contentType === 'pdf' && !pdfUrl) {
+      alert('Por favor, faça upload de um arquivo PDF');
+      setSubmitting(false);
+      return;
+    }
+
+    if (contentType === 'text' && !textContent) {
+      alert('Por favor, adicione conteúdo de texto');
+      setSubmitting(false);
+      return;
+    }
+
     // Construir objeto de conteúdo baseado no tipo
     let content: Record<string, unknown> = {};
     switch (contentType) {
@@ -125,7 +144,7 @@ export function AddLessonForm({ onSubmit, onCancel, initialData, isEditing = fal
       {contentType === 'video' && (
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Upload de Vídeo</label>
+            <label className="block text-sm font-medium mb-2">Upload de Vídeo *</label>
             <FileUpload
               type="video"
               onUploadComplete={(file) => setVideoUrl(file.url)}
@@ -133,7 +152,7 @@ export function AddLessonForm({ onSubmit, onCancel, initialData, isEditing = fal
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Ou Cole a URL do Vídeo</label>
+            <label className="block text-sm font-medium mb-2">Ou Cole a URL do Vídeo *</label>
             <input
               type="url"
               value={videoUrl}
@@ -141,7 +160,13 @@ export function AddLessonForm({ onSubmit, onCancel, initialData, isEditing = fal
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="https://youtube.com/watch?v=..."
             />
-            <p className="text-xs text-gray-500 mt-1">Suporta YouTube, Vimeo ou link direto</p>
+            <p className="text-xs text-gray-500 mt-1">
+              {videoUrl ? (
+                <span className="text-green-600">✓ URL configurada: {videoUrl.substring(0, 50)}...</span>
+              ) : (
+                <span className="text-red-600">⚠️ Obrigatório: Suporta YouTube, Vimeo ou link direto</span>
+              )}
+            </p>
           </div>
         </div>
       )}
@@ -159,12 +184,18 @@ export function AddLessonForm({ onSubmit, onCancel, initialData, isEditing = fal
 
       {contentType === 'pdf' && (
         <div>
-          <label className="block text-sm font-medium mb-2">Upload de PDF</label>
+          <label className="block text-sm font-medium mb-2">Upload de PDF *</label>
           <FileUpload
             type="pdf"
             onUploadComplete={(file) => setPdfUrl(file.url)}
             maxSizeMB={50}
           />
+          {pdfUrl && (
+            <p className="text-xs text-green-600 mt-2">✓ PDF enviado com sucesso</p>
+          )}
+          {!pdfUrl && (
+            <p className="text-xs text-red-600 mt-2">⚠️ Obrigatório: Faça upload de um arquivo PDF</p>
+          )}
         </div>
       )}
 
