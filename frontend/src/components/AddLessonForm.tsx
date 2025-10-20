@@ -30,7 +30,9 @@ export function AddLessonForm({ onSubmit, onCancel, initialData, isEditing = fal
   const [contentType, setContentType] = useState<LessonContentType>(initialData?.contentType || 'video');
   const [textContent, setTextContent] = useState((initialData?.content?.textContent as string) || '');
   const [videoUrl, setVideoUrl] = useState((initialData?.content?.videoUrl as string) || '');
+  const [videoFileId, setVideoFileId] = useState((initialData?.content?.videoFileId as string) || '');
   const [pdfUrl, setPdfUrl] = useState((initialData?.content?.pdfUrl as string) || '');
+  const [pdfFileId, setPdfFileId] = useState((initialData?.content?.pdfFileId as string) || '');
   const [externalUrl, setExternalUrl] = useState((initialData?.content?.externalUrl as string) || '');
   const [submitting, setSubmitting] = useState(false);
 
@@ -65,6 +67,7 @@ export function AddLessonForm({ onSubmit, onCancel, initialData, isEditing = fal
       case 'video':
         content = {
           videoUrl,
+          videoFileId,
           videoProvider: videoUrl.includes('youtube') ? 'youtube' : videoUrl.includes('vimeo') ? 'vimeo' : 'external'
         };
         break;
@@ -72,7 +75,7 @@ export function AddLessonForm({ onSubmit, onCancel, initialData, isEditing = fal
         content = { textContent };
         break;
       case 'pdf':
-        content = { pdfUrl };
+        content = { pdfUrl, pdfFileId };
         break;
       case 'external':
         content = { externalUrl };
@@ -147,7 +150,10 @@ export function AddLessonForm({ onSubmit, onCancel, initialData, isEditing = fal
             <label className="block text-sm font-medium mb-2">Upload de Vídeo *</label>
             <FileUpload
               type="video"
-              onUploadComplete={(file) => setVideoUrl(file.url)}
+              onUploadComplete={(file) => {
+                setVideoUrl(file.url);
+                setVideoFileId(file.id);
+              }}
               maxSizeMB={500}
             />
           </div>
@@ -187,7 +193,10 @@ export function AddLessonForm({ onSubmit, onCancel, initialData, isEditing = fal
           <label className="block text-sm font-medium mb-2">Upload de PDF *</label>
           <FileUpload
             type="pdf"
-            onUploadComplete={(file) => setPdfUrl(file.url)}
+            onUploadComplete={(file) => {
+              setPdfUrl(file.url);
+              setPdfFileId(file.id);
+            }}
             maxSizeMB={50}
           />
           {pdfUrl && (

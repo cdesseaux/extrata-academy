@@ -455,6 +455,10 @@ class ApiClient {
     });
   }
 
+  async getFilePresignedUrl(id: string): Promise<{ url: string; expiresIn: number }> {
+    return this.request(`/files/${id}/url`);
+  }
+
   // Certificate endpoints
   async getMyCertificates(): Promise<unknown[]> {
     return this.request<unknown[]>('/certificates/my-certificates');

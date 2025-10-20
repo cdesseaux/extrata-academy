@@ -41,6 +41,8 @@ export default function LearnCoursePage() {
   const [error, setError] = useState<string | null>(null);
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [quizMode, setQuizMode] = useState<'play' | 'results'>('results');
+  const [videoPresignedUrl, setVideoPresignedUrl] = useState<string | null>(null);
+  const [pdfPresignedUrl, setPdfPresignedUrl] = useState<string | null>(null);
 
   useEffect(() => {
     loadCourseData();
@@ -67,6 +69,35 @@ export default function LearnCoursePage() {
     } else {
       setQuiz(null);
       setQuizMode('results');
+    }
+
+    // Fetch presigned URLs for S3 files
+    if (currentLesson?.contentType === LessonContentType.VIDEO) {
+      const fileId = currentLesson.content?.videoFileId as string;
+      if (fileId) {
+        apiClient.getFilePresignedUrl(fileId)
+          .then((response) => setVideoPresignedUrl(response.url))
+          .catch((err) => {
+            console.error('Error fetching video presigned URL:', err);
+            setVideoPresignedUrl(null);
+          });
+      } else {
+        setVideoPresignedUrl(null);
+      }
+    }
+
+    if (currentLesson?.contentType === LessonContentType.PDF) {
+      const fileId = currentLesson.content?.pdfFileId as string;
+      if (fileId) {
+        apiClient.getFilePresignedUrl(fileId)
+          .then((response) => setPdfPresignedUrl(response.url))
+          .catch((err) => {
+            console.error('Error fetching PDF presigned URL:', err);
+            setPdfPresignedUrl(null);
+          });
+      } else {
+        setPdfPresignedUrl(null);
+      }
     }
   }, [currentLesson]);
 
@@ -318,7 +349,7 @@ export default function LearnCoursePage() {
                 <div className="bg-gray-100 rounded-lg p-8 mb-6">
                   {currentLesson.contentType === LessonContentType.VIDEO && (
                     <AdvancedVideoPlayer
-                      src={currentLesson.content?.videoUrl || ''}
+                      src={videoPresignedUrl || currentLesson.content?.videoUrl || ''}
                       title={currentLesson.title}
                       videoId={`lesson-${currentLesson.id}`}
                       onComplete={() => {
@@ -343,7 +374,7 @@ export default function LearnCoursePage() {
 
                   {currentLesson.contentType === LessonContentType.PDF && (
                     <AdvancedPDFViewer
-                      src={currentLesson.content?.pdfUrl || ''}
+                      src={pdfPresignedUrl || currentLesson.content?.pdfUrl || ''}
                       title={currentLesson.title}
                       pdfId={`lesson-${currentLesson.id}`}
                       onComplete={() => {
