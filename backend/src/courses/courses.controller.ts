@@ -1,13 +1,18 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, UseInterceptors } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { CoursesService } from './courses.service';
 import { CreateCourseDto, UpdateCourseDto } from './dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { HttpCacheInterceptor } from '../common/interceptors/cache.interceptor';
+import { CacheService } from '../common/services/cache.service';
 
 @ApiTags('Courses')
 @Controller('courses')
 export class CoursesController {
-  constructor(private readonly coursesService: CoursesService) {}
+  constructor(
+    private readonly coursesService: CoursesService,
+    private readonly cacheService: CacheService,
+  ) {}
 
   @Post()
   @UseGuards(JwtAuthGuard)
@@ -16,14 +21,21 @@ export class CoursesController {
   @ApiResponse({ status: 201, description: 'Course created successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 400, description: 'Bad request - validation failed' })
-  create(@Body() createCourseDto: CreateCourseDto, @Request() req: any) {
-    return this.coursesService.create({
+  async create(@Body() createCourseDto: CreateCourseDto, @Request() req: any) {
+    const course = await this.coursesService.create({
       ...createCourseDto,
       instructorId: req.user.id,
     });
+
+    // Invalidate course list cache
+    await this.cacheService.delByPattern('http:/api/courses?*');
+    await this.cacheService.delByPattern('http:/api/courses/my-courses*');
+
+    return course;
   }
 
   @Get()
+  @UseInterceptors(HttpCacheInterceptor) // Cache for 5 minutes
   @ApiOperation({ summary: 'Get all courses' })
   @ApiResponse({ status: 200, description: 'List of all courses' })
   findAll() {
@@ -33,6 +45,7 @@ export class CoursesController {
   @Get('my-courses')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
+  @UseInterceptors(HttpCacheInterceptor) // Cache for 5 minutes
   @ApiOperation({ summary: 'Get my courses (as instructor)' })
   @ApiResponse({ status: 200, description: 'List of instructor courses' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -41,7 +54,8 @@ export class CoursesController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get course by ID' })
+  @UseInterceptors(HttpCacheInterceptor) // Cache for 5 minutes
+  @ApiOperation({ summary: 'Get course by ID' }}
   @ApiParam({ name: 'id', description: 'Course UUID' })
   @ApiResponse({ status: 200, description: 'Course details' })
   @ApiResponse({ status: 404, description: 'Course not found' })
@@ -57,8 +71,13 @@ export class CoursesController {
   @ApiResponse({ status: 200, description: 'Course updated successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Course not found' })
-  update(@Param('id') id: string, @Body() updateCourseDto: UpdateCourseDto) {
-    return this.coursesService.update(id, updateCourseDto);
+  async update(@Param('id') id: string, @Body() updateCourseDto: UpdateCourseDto) {
+    const course = await this.coursesService.update(id, updateCourseDto);
+
+    // Invalidate cache for this course and lists
+    await this.cacheService.invalidateCourse(id);
+
+    return course;
   }
 
   @Delete(':id')
@@ -69,8 +88,13 @@ export class CoursesController {
   @ApiResponse({ status: 200, description: 'Course deleted successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Course not found' })
-  remove(@Param('id') id: string) {
-    return this.coursesService.remove(id);
+  async remove(@Param('id') id: string) {
+    const result = await this.coursesService.remove(id);
+
+    // Invalidate cache for this course and lists
+    await this.cacheService.invalidateCourse(id);
+
+    return result;
   }
 
   @Patch(':id/publish')
@@ -80,8 +104,13 @@ export class CoursesController {
   @ApiParam({ name: 'id', description: 'Course UUID' })
   @ApiResponse({ status: 200, description: 'Course published successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  publish(@Param('id') id: string) {
-    return this.coursesService.publish(id);
+  async publish(@Param('id') id: string) {
+    const course = await this.coursesService.publish(id);
+
+    // Invalidate cache
+    await this.cacheService.invalidateCourse(id);
+
+    return course;
   }
 
   @Patch(':id/unpublish')
@@ -91,8 +120,13 @@ export class CoursesController {
   @ApiParam({ name: 'id', description: 'Course UUID' })
   @ApiResponse({ status: 200, description: 'Course unpublished successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  unpublish(@Param('id') id: string) {
-    return this.coursesService.unpublish(id);
+  async unpublish(@Param('id') id: string) {
+    const course = await this.coursesService.unpublish(id);
+
+    // Invalidate cache
+    await this.cacheService.invalidateCourse(id);
+
+    return course;
   }
 
   @Patch(':id/update-duration')
@@ -102,8 +136,13 @@ export class CoursesController {
   @ApiParam({ name: 'id', description: 'Course UUID' })
   @ApiResponse({ status: 200, description: 'Duration updated successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  updateDuration(@Param('id') id: string) {
-    return this.coursesService.updateCourseDuration(id);
+  async updateDuration(@Param('id') id: string) {
+    const course = await this.coursesService.updateCourseDuration(id);
+
+    // Invalidate cache
+    await this.cacheService.invalidateCourse(id);
+
+    return course;
   }
 }
 

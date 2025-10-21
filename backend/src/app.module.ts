@@ -21,6 +21,7 @@ import { FilesModule } from './files/files.module';
 import { QuizzesModule } from './quizzes/quizzes.module';
 import { HealthModule } from './health/health.module';
 import { LearningPathsModule } from './learning-paths/learning-paths.module';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
@@ -30,9 +31,11 @@ import { LearningPathsModule } from './learning-paths/learning-paths.module';
     }),
     WinstonModule.forRoot(loggerConfig),
     CacheModule.registerAsync({
+      isGlobal: true, // Make cache available globally
       useFactory: cacheConfig,
       inject: [ConfigService],
     }),
+    CommonModule,
     ThrottlerModule.forRoot([
       {
         ttl: 60000, // 1 minuto
