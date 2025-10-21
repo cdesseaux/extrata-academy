@@ -1,30 +1,38 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Request, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Request, Res, UseInterceptors } from '@nestjs/common';
 import { CertificatesService } from './certificates.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { Response } from 'express';
 import * as path from 'path';
 import * as fs from 'fs';
+import { HttpCacheInterceptor } from '../common/interceptors/cache.interceptor';
+import { CacheService } from '../common/services/cache.service';
 
 @Controller('certificates')
 export class CertificatesController {
-  constructor(private readonly certificatesService: CertificatesService) {}
+  constructor(
+    private readonly certificatesService: CertificatesService,
+    private readonly cacheService: CacheService,
+  ) {}
 
   @Get('my-certificates')
   @UseGuards(JwtAuthGuard)
+  @UseInterceptors(HttpCacheInterceptor)
   async getMyCertificates(@Request() req: any) {
     return this.certificatesService.getUserCertificates(req.user.id);
   }
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
+  @UseInterceptors(HttpCacheInterceptor)
   async getCertificate(@Param('id') id: string) {
     return this.certificatesService.getCertificateById(id);
   }
 
   @Get('validate/:certificateNumber')
+  @UseInterceptors(HttpCacheInterceptor)
   async validateCertificate(@Param('certificateNumber') certificateNumber: string) {
     const certificate = await this.certificatesService.validateCertificate(certificateNumber);
-    
+
     if (!certificate) {
       return {
         valid: false,
@@ -76,11 +84,22 @@ export class CertificatesController {
     @Body() body: { courseId: string; completionDate?: string },
   ) {
     const completionDate = body.completionDate ? new Date(body.completionDate) : new Date();
-    
-    return this.certificatesService.createCertificate(
+
+    const certificate = await this.certificatesService.createCertificate(
       req.user.id,
       body.courseId,
       completionDate,
     );
+
+    // Invalidate certificate caches
+    await this.cacheService.delByPattern(`http:/api/certificates/my-certificates*user:${req.user.id}*`);
+    if (certificate.id) {
+      await this.cacheService.del(`http:/api/certificates/${certificate.id}`);
+    }
+    if (certificate.certificateNumber) {
+      await this.cacheService.del(`http:/api/certificates/validate/${certificate.certificateNumber}`);
+    }
+
+    return certificate;
   }
 }

@@ -1,29 +1,41 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, UseInterceptors } from '@nestjs/common';
 import { EnrollmentsService } from './enrollments.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { HttpCacheInterceptor } from '../common/interceptors/cache.interceptor';
+import { CacheService } from '../common/services/cache.service';
 
 @Controller('enrollments')
 export class EnrollmentsController {
-  constructor(private readonly enrollmentsService: EnrollmentsService) {}
+  constructor(
+    private readonly enrollmentsService: EnrollmentsService,
+    private readonly cacheService: CacheService,
+  ) {}
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  create(@Body() createEnrollmentDto: any, @Request() req: any) {
+  async create(@Body() createEnrollmentDto: any, @Request() req: any) {
     console.log('Criando matrícula:', createEnrollmentDto, 'para usuário:', req.user);
-    return this.enrollmentsService.create({
+    const enrollment = await this.enrollmentsService.create({
       ...createEnrollmentDto,
       userId: req.user.id,
     });
+
+    // Invalidate enrollment caches
+    await this.cacheService.invalidateEnrollment(req.user.id, createEnrollmentDto.courseId);
+
+    return enrollment;
   }
 
   @Get()
   @UseGuards(JwtAuthGuard)
+  @UseInterceptors(HttpCacheInterceptor)
   findAll() {
     return this.enrollmentsService.findAll();
   }
 
   @Get('my-enrollments')
   @UseGuards(JwtAuthGuard)
+  @UseInterceptors(HttpCacheInterceptor)
   findMyEnrollments(@Request() req: any) {
     return this.enrollmentsService.findByUser(req.user.id);
   }
@@ -36,38 +48,64 @@ export class EnrollmentsController {
 
   @Get('course/:courseId')
   @UseGuards(JwtAuthGuard)
+  @UseInterceptors(HttpCacheInterceptor)
   findByCourse(@Param('courseId') courseId: string) {
     return this.enrollmentsService.findByCourse(courseId);
   }
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
+  @UseInterceptors(HttpCacheInterceptor)
   findOne(@Param('id') id: string) {
     return this.enrollmentsService.findOne(id);
   }
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
-  update(@Param('id') id: string, @Body() updateEnrollmentDto: any) {
-    return this.enrollmentsService.update(id, updateEnrollmentDto);
+  async update(@Param('id') id: string, @Body() updateEnrollmentDto: any, @Request() req: any) {
+    const enrollment = await this.enrollmentsService.update(id, updateEnrollmentDto);
+
+    // Invalidate enrollment caches
+    await this.cacheService.invalidateEnrollment(req.user.id);
+    await this.cacheService.del(`http:/api/enrollments/${id}`);
+
+    return enrollment;
   }
 
   @Patch(':id/progress')
   @UseGuards(JwtAuthGuard)
-  updateProgress(@Param('id') id: string, @Body() body: { progress: number }) {
-    return this.enrollmentsService.updateProgress(id, body.progress);
+  async updateProgress(@Param('id') id: string, @Body() body: { progress: number }, @Request() req: any) {
+    const enrollment = await this.enrollmentsService.updateProgress(id, body.progress);
+
+    // Invalidate enrollment caches
+    await this.cacheService.invalidateEnrollment(req.user.id);
+    await this.cacheService.del(`http:/api/enrollments/${id}`);
+
+    return enrollment;
   }
 
   @Patch(':id/calculate-progress')
   @UseGuards(JwtAuthGuard)
-  calculateProgress(@Param('id') id: string) {
-    return this.enrollmentsService.calculateProgressFromLessons(id);
+  async calculateProgress(@Param('id') id: string, @Request() req: any) {
+    const enrollment = await this.enrollmentsService.calculateProgressFromLessons(id);
+
+    // Invalidate enrollment caches
+    await this.cacheService.invalidateEnrollment(req.user.id);
+    await this.cacheService.del(`http:/api/enrollments/${id}`);
+
+    return enrollment;
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
-  remove(@Param('id') id: string) {
-    return this.enrollmentsService.remove(id);
+  async remove(@Param('id') id: string, @Request() req: any) {
+    const result = await this.enrollmentsService.remove(id);
+
+    // Invalidate enrollment caches
+    await this.cacheService.invalidateEnrollment(req.user.id);
+    await this.cacheService.del(`http:/api/enrollments/${id}`);
+
+    return result;
   }
 }
 
