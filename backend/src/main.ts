@@ -6,9 +6,20 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { HttpExceptionFilter } from './common/exceptions';
 import { join } from 'path';
 import helmet from 'helmet';
+import { sentryConfig } from './config/sentry.config';
 
 async function bootstrap() {
+  // Initialize Sentry BEFORE creating the app
+  sentryConfig();
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // Sentry request handler must be the first middleware
+  // This captures all requests for performance monitoring
+  if (process.env.SENTRY_ENABLED === 'true' && process.env.SENTRY_DSN) {
+    const Sentry = require('@sentry/nestjs');
+    app.use(Sentry.Handlers.requestHandler());
+    app.use(Sentry.Handlers.tracingHandler());
+  }
 
   // Configurar Helmet para segurança
   app.use(helmet({
@@ -99,8 +110,19 @@ async function bootstrap() {
     },
   });
 
+  // Sentry error handler must be after all other middleware
+  // This captures all errors that occur in the app
+  if (process.env.SENTRY_ENABLED === 'true' && process.env.SENTRY_DSN) {
+    const Sentry = require('@sentry/nestjs');
+    app.use(Sentry.Handlers.errorHandler());
+  }
+
   await app.listen(process.env.PORT ?? 4000);
   console.log(`🚀 Backend rodando em http://localhost:${process.env.PORT ?? 4000}/api`);
   console.log(`📚 Documentação Swagger: http://localhost:${process.env.PORT ?? 4000}/api/docs`);
+
+  if (process.env.SENTRY_ENABLED === 'true' && process.env.SENTRY_DSN) {
+    console.log('📊 Sentry error tracking: ENABLED');
+  }
 }
 bootstrap();
