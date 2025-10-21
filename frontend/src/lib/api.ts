@@ -311,10 +311,10 @@ class ApiClient {
 
   // Question endpoints
   async addQuestion(questionData: Record<string, unknown>) {
-    const { quizId, ...data } = questionData;
+    const quizId = questionData.quizId as string;
     return this.request(`/quizzes/${quizId}/questions`, {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify(questionData),
     });
   }
 
