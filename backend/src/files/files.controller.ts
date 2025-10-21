@@ -156,8 +156,7 @@ export class FilesController {
   }
 
   @Get(':id/url')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get presigned URL for private file access' })
+  @ApiOperation({ summary: 'Get presigned URL for private file access (public endpoint)' })
   @ApiResponse({
     status: 200,
     description: 'Presigned URL generated successfully',

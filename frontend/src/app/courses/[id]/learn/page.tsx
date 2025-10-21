@@ -74,14 +74,21 @@ export default function LearnCoursePage() {
     // Fetch presigned URLs for S3 files
     if (currentLesson?.contentType === LessonContentType.VIDEO) {
       const fileId = currentLesson.content?.videoFileId as string;
+      console.log('🎥 Video lesson detected. FileId:', fileId);
       if (fileId) {
+        console.log('📡 Fetching presigned URL for fileId:', fileId);
         apiClient.getFilePresignedUrl(fileId)
-          .then((response) => setVideoPresignedUrl(response.url))
+          .then((response) => {
+            console.log('✅ Presigned URL received:', response.url.substring(0, 100) + '...');
+            setVideoPresignedUrl(response.url);
+          })
           .catch((err) => {
-            console.error('Error fetching video presigned URL:', err);
+            console.error('❌ Error fetching video presigned URL:', err);
+            console.error('Full error:', JSON.stringify(err, null, 2));
             setVideoPresignedUrl(null);
           });
       } else {
+        console.log('⚠️ No fileId found, using direct URL');
         setVideoPresignedUrl(null);
       }
     }
