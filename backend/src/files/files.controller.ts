@@ -15,6 +15,7 @@ import { ApiTags, ApiConsumes, ApiBody, ApiBearerAuth, ApiOperation, ApiResponse
 import { FilesService } from './files.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { FileType } from './entities/file.entity';
+import { CustomThrottle } from '../common/decorators/custom-throttle.decorator';
 
 @ApiTags('Files')
 @ApiBearerAuth('JWT-auth')
@@ -23,6 +24,7 @@ export class FilesController {
   constructor(private readonly filesService: FilesService) {}
 
   @Post('upload/video')
+  @CustomThrottle('upload-video', { limit: 10, ttl: 3600000 }) // 10 uploads per hour
   @ApiOperation({ summary: 'Upload video file to S3' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -50,6 +52,7 @@ export class FilesController {
   }
 
   @Post('upload/pdf')
+  @CustomThrottle('upload-pdf', { limit: 10, ttl: 3600000 }) // 10 uploads per hour
   @ApiOperation({ summary: 'Upload PDF file to S3' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -77,6 +80,7 @@ export class FilesController {
   }
 
   @Post('upload/image')
+  @CustomThrottle('upload-image', { limit: 20, ttl: 3600000 }) // 20 uploads per hour (images more common)
   @ApiOperation({ summary: 'Upload image file to S3' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -104,6 +108,7 @@ export class FilesController {
   }
 
   @Post('upload/thumbnail')
+  @CustomThrottle('upload-thumbnail', { limit: 20, ttl: 3600000 }) // 20 uploads per hour
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('file'))
   async uploadThumbnail(
@@ -117,6 +122,7 @@ export class FilesController {
   }
 
   @Post('upload/avatar')
+  @CustomThrottle('upload-avatar', { limit: 5, ttl: 3600000 }) // 5 uploads per hour (avatars rarely change)
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('file'))
   async uploadAvatar(
@@ -130,6 +136,7 @@ export class FilesController {
   }
 
   @Post('upload/document')
+  @CustomThrottle('upload-document', { limit: 10, ttl: 3600000 }) // 10 uploads per hour
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('file'))
   async uploadDocument(
@@ -156,6 +163,7 @@ export class FilesController {
   }
 
   @Get(':id/url')
+  @CustomThrottle('presigned-url', { limit: 100, ttl: 60000 }) // 100 requests per minute
   @ApiOperation({ summary: 'Get presigned URL for private file access (public endpoint)' })
   @ApiResponse({
     status: 200,

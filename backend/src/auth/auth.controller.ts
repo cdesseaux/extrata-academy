@@ -2,6 +2,7 @@ import { Controller, Get, UseGuards, Request, Headers } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { CustomThrottle } from '../common/decorators/custom-throttle.decorator';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -11,6 +12,7 @@ export class AuthController {
   @Get('profile')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
+  @CustomThrottle('auth-profile', { limit: 30, ttl: 60000 }) // 30 requests per minute
   @ApiOperation({ summary: 'Get authenticated user profile' })
   @ApiResponse({ status: 200, description: 'User profile retrieved successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -21,6 +23,7 @@ export class AuthController {
   @Get('verify')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
+  @CustomThrottle('auth-verify', { limit: 20, ttl: 60000 }) // 20 requests per minute
   @ApiOperation({ summary: 'Verify JWT token' })
   @ApiResponse({ status: 200, description: 'Token is valid' })
   @ApiResponse({ status: 401, description: 'Token is invalid' })
@@ -32,6 +35,7 @@ export class AuthController {
   }
 
   @Get('debug')
+  @CustomThrottle('auth-debug', { limit: 5, ttl: 900000 }) // 5 requests per 15 minutes
   @ApiOperation({ summary: 'Debug token information' })
   @ApiResponse({ status: 200, description: 'Token debug info' })
   debugToken(@Headers('authorization') authHeader: string) {
@@ -78,6 +82,7 @@ export class AuthController {
   }
 
   @Get('env-debug')
+  @CustomThrottle('auth-env-debug', { limit: 5, ttl: 900000 }) // 5 requests per 15 minutes
   @ApiOperation({ summary: 'Debug environment variables' })
   @ApiResponse({ status: 200, description: 'Environment variables info' })
   debugEnv() {
@@ -93,6 +98,7 @@ export class AuthController {
   }
 
   @Get('test-token')
+  @CustomThrottle('auth-test-token', { limit: 5, ttl: 900000 }) // 5 requests per 15 minutes
   @ApiOperation({ summary: 'Test token validation' })
   @ApiResponse({ status: 200, description: 'Token validation result' })
   testToken(@Headers('authorization') authHeader: string) {
